@@ -601,6 +601,9 @@
       background: var(--kke-blue);
     }
 
+    .chemical-level-fill.chem-side-a { background: #dc2626; }
+    .chemical-level-fill.chem-side-b { background: var(--kke-blue); }
+
     .chemical-level-fill.low { background: #f59e0b; }
     .chemical-level-fill.critical { background: var(--danger); }
 
@@ -1126,6 +1129,7 @@
     <button id="tabNew" class="tab-btn active">New Report</button>
     <button id="tabHistory" class="tab-btn">History</button>
     <button id="tabDashboard" class="tab-btn" style="display:none;">Dashboard</button>
+    <button id="tabChemical" class="tab-btn" style="display:none;">Chemical Tracker</button>
     <button id="btnLogout" class="tab-btn" style="color: var(--danger); flex: 0.4;">Logout</button>
   </div>
 
@@ -1546,41 +1550,6 @@
       </div>
     </div>
 
-    <div class="card" id="chemicalTrackerCard">
-      <h2>Chemical Inventory Tracker</h2>
-      <p class="dashboard-note">Live estimate by truck. The tracker starts from the last full tote/barrel reset or pour-up, then subtracts A/B flow meter pounds from submitted production reports. Truck 119 uses barrels; all other trucks use totes.</p>
-      <div class="grid">
-        <div class="calc-box">
-          <div class="calc-label">Total A-Side Remaining</div>
-          <div class="calc-value" id="chemTotalA">0</div>
-        </div>
-        <div class="calc-box">
-          <div class="calc-label">Total B-Side Remaining</div>
-          <div class="calc-value" id="chemTotalB">0</div>
-        </div>
-        <div class="calc-box">
-          <div class="calc-label">Low / Critical Sides</div>
-          <div class="calc-value" id="chemLowCount">0</div>
-        </div>
-        <div class="calc-box">
-          <div class="calc-label">Last Inventory Event</div>
-          <div class="calc-value" id="chemLastEvent" style="font-size:16px; line-height:1.2;">—</div>
-        </div>
-      </div>
-      <div id="chemicalTrackerGrid" class="chemical-grid" style="margin-top:16px;">
-        <div class="empty-state">Loading chemical tracker...</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Chemical Changeout / Pour-Up Log</h2>
-      <p class="dashboard-note">This records when a manager resets a side to full or adds a custom pour-up amount. Leftover is captured from the live calculated level at the time of changeout.</p>
-      <div id="chemicalEventLog" class="chemical-event-log">
-        <div class="empty-state">No chemical events yet.</div>
-      </div>
-    </div>
-
-
     <div class="card" id="transitionAnalyticsCard">
       <h2>Dispatch Efficiency — Job-to-Job Transition / GPS Travel</h2>
       <p class="dashboard-note">This is the travel and downtime metric. It is calculated from same-day reports by the same truck: previous finish time to next job start time, with GPS distance between job pins.</p>
@@ -1695,6 +1664,59 @@
       <div id="flaggedReports" class="empty-state">No flagged reports.</div>
     </div>
   </div>
+
+  <!-- Chemical Tracker Tab -->
+  <div id="chemical" class="tab-content">
+    <div class="header">
+      <div class="header-topline"></div>
+      <div class="header-inner">
+        <div class="brand-panel">
+          <img src="logo.png" alt="KKE Concrete Lifting" class="brand-logo" onerror="swapLogoOrFallback(this)">
+          <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+        </div>
+        <div class="title-box">
+          <p class="eyebrow">Manager Chemical Control</p>
+          <h1>Chemical Inventory Tracker</h1>
+          <p>Visual A/B side levels by truck, reset controls, and pour-up tracking.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="chemicalTrackerCard">
+      <h2>Chemical Inventory Tracker</h2>
+      <p class="dashboard-note">Manager-only controls. Truck cards show visual chemical levels without displaying per-truck pound or gallon amounts. A-side is red, B-side is blue. Truck 119 uses barrels; all other trucks use totes.</p>
+      <div class="grid">
+        <div class="calc-box">
+          <div class="calc-label">Total A-Side Remaining</div>
+          <div class="calc-value" id="chemTotalA">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Total B-Side Remaining</div>
+          <div class="calc-value" id="chemTotalB">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Low / Critical Sides</div>
+          <div class="calc-value" id="chemLowCount">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Last Inventory Event</div>
+          <div class="calc-value" id="chemLastEvent" style="font-size:16px; line-height:1.2;">—</div>
+        </div>
+      </div>
+      <div id="chemicalTrackerGrid" class="chemical-grid" style="margin-top:16px;">
+        <div class="empty-state">Loading chemical tracker...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Chemical Changeout / Pour-Up Log</h2>
+      <p class="dashboard-note">This records when a manager resets a side to full or adds a custom pour-up amount. Leftover is captured from the live calculated level at the time of changeout.</p>
+      <div id="chemicalEventLog" class="chemical-event-log">
+        <div class="empty-state">No chemical events yet.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 
@@ -2072,7 +2094,9 @@
       mainContent.style.display = 'block';
 
       const dashboardTab = document.getElementById('tabDashboard');
+      const chemicalTab = document.getElementById('tabChemical');
       if (dashboardTab) dashboardTab.style.display = isCurrentUserManager ? 'block' : 'none';
+      if (chemicalTab) chemicalTab.style.display = isCurrentUserManager ? 'block' : 'none';
 
       loadHistory();
       if (isCurrentUserManager) {
@@ -2085,7 +2109,9 @@
       authOverlay.style.display = 'flex';
       mainContent.style.display = 'none';
       const dashboardTab = document.getElementById('tabDashboard');
+      const chemicalTab = document.getElementById('tabChemical');
       if (dashboardTab) dashboardTab.style.display = 'none';
+      if (chemicalTab) chemicalTab.style.display = 'none';
       switchTab('new-form');
     }
   });
@@ -2160,6 +2186,7 @@ document.addEventListener("change", (e) => {
       tabId === 'new-form' ? 'tabNew' :
       tabId === 'history' ? 'tabHistory' :
       tabId === 'dashboard' ? 'tabDashboard' :
+      tabId === 'chemical' ? 'tabChemical' :
       'tabNew';
     const btn = document.getElementById(btnId);
     if (btn) btn.classList.add('active');
@@ -2175,6 +2202,13 @@ document.addEventListener("change", (e) => {
       return;
     }
     switchTab('dashboard');
+  });
+  document.getElementById('tabChemical')?.addEventListener('click', () => {
+    if (!isCurrentUserManager) {
+      showMessage("Chemical tracker access is restricted to managers.", "error");
+      return;
+    }
+    switchTab('chemical');
   });
 
   function showMessage(text, type = 'success') {
@@ -3124,21 +3158,28 @@ data.googlePlaceId = data.googlePlaceId || "";
 
   function renderChemicalSide(truck, side) {
     const state = getChemicalStateForTruck(truck, side);
-    const lowClass = state.percent <= 10 ? 'critical' : state.percent <= 25 ? 'low' : '';
+    const pkg = getTruckChemicalPackage(truck);
     const sideName = side === 'A' ? 'A-Side' : 'B-Side';
+    const sideClass = side === 'A' ? 'chem-side-a' : 'chem-side-b';
+    const resetLabel = pkg.label === 'Barrels' ? 'Reset Barrel' : 'Reset Tote';
+    const levelLabel = state.percent <= 10 ? 'Critical' : state.percent <= 25 ? 'Low' : 'OK';
+
     return `
       <div class="chemical-side-card">
-        <div class="chemical-side-title"><span>${sideName}</span><span class="chemical-percent">${fmtNumber(state.percent, 0)}%</span></div>
-        <div class="chemical-level-track"><div class="chemical-level-fill ${lowClass}" style="--chem-width:${state.percent}%"></div></div>
-        <div class="chemical-side-value">${fmtNumber(state.remaining, 0)} lbs</div>
-        <div class="chemical-side-sub">Used since last reset: ${fmtNumber(state.used, 0)} lbs</div>
+        <div class="chemical-side-title">
+          <span>${sideName}</span>
+          <span class="chemical-percent">${fmtNumber(state.percent, 0)}% • ${levelLabel}</span>
+        </div>
+        <div class="chemical-level-track">
+          <div class="chemical-level-fill ${sideClass}" style="--chem-width:${state.percent}%"></div>
+        </div>
+        <div class="chemical-side-sub">Visual estimate only. Pound and gallon detail stays in manager controls and event records.</div>
         <div class="chemical-actions">
-          <button class="btn btn-outline small-btn" type="button" data-chem-action="full" data-truck="${escapeHtml(truck)}" data-side="${side}">Set Full</button>
-          <button class="btn btn-warning small-btn" type="button" data-chem-action="changeout" data-truck="${escapeHtml(truck)}" data-side="${side}">Changeout</button>
+          <button class="btn btn-outline small-btn" type="button" data-chem-action="full" data-truck="${escapeHtml(truck)}" data-side="${side}">${resetLabel}</button>
         </div>
         <div class="pour-up-row">
-          <input id="pour-${escapeHtml(truck)}-${side}" type="number" min="0" step="0.1" placeholder="Pour-up gallons">
-          <button class="btn btn-primary small-btn" type="button" data-chem-action="pourup" data-truck="${escapeHtml(truck)}" data-side="${side}">Add</button>
+          <input id="pour-${escapeHtml(truck)}-${side}" type="number" min="0" step="0.1" placeholder="Custom pour-up gallons">
+          <button class="btn btn-primary small-btn" type="button" data-chem-action="pourup" data-truck="${escapeHtml(truck)}" data-side="${side}">Add Pour-Up</button>
         </div>
       </div>
     `;
@@ -3243,7 +3284,7 @@ data.googlePlaceId = data.googlePlaceId || "";
       return;
     }
 
-    const actionLabel = action === 'changeout' ? 'Changeout / set full' : 'Set full';
+    const actionLabel = action === 'changeout' ? 'Changeout / set full' : 'Reset full';
     await setDoc(invRef, {
       truck: String(truck),
       [`${sideLower}Package`]: getTruckChemicalPackage(truck).label,
