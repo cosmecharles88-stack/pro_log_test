@@ -1,0 +1,3431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KKE Crew Profile Sheet</title>
+  <style>
+    :root {
+      --kke-blue: #0057a8;
+      --kke-dark-blue: #003f7d;
+      --dark: #111827;
+      --gray: #6b7280;
+      --light: #f3f4f6;
+      --border: #d1d5db;
+      --danger: #b91c1c;
+      --success: #166534;
+      --warning: #92400e;
+      --card: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      padding-bottom: 100px;
+    }
+
+    /* Auth Overlay */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.98);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: white;
+      padding: 36px;
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+      max-width: 430px;
+      width: 100%;
+      border: 1px solid rgba(0, 87, 168, 0.12);
+    }
+
+    .login-logo-wrap {
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+      display: none; /* Hidden until auth */
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: #e5e7eb;
+      padding: 4px;
+      border-radius: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--gray);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--kke-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Branded Header */
+    .header {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #eaf4ff 100%);
+      border-radius: 22px;
+      padding: 0;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0, 87, 168, 0.12);
+    }
+
+    .header-topline {
+      position: relative;
+      height: 8px;
+      background: linear-gradient(90deg, var(--kke-dark-blue), var(--kke-blue), #0b75d1);
+    }
+
+    .header-inner {
+      position: relative;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: stretch;
+      padding: 20px;
+    }
+
+    .brand-panel {
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(0,87,168,0.12);
+      border-radius: 16px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 125px;
+    }
+
+    .brand-logo {
+      width: 100%;
+      max-width: 300px;
+      max-height: 115px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .login-logo {
+      width: 100%;
+      max-width: 320px;
+      max-height: 125px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .logo-placeholder {
+      font-weight: 900;
+      font-size: 26px;
+      color: var(--kke-blue);
+      letter-spacing: -1px;
+    }
+
+    .title-box {
+      background: var(--kke-blue);
+      color: white;
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.72);
+    }
+
+    .title-box h1 { margin: 0; font-size: 30px; line-height: 1.1; }
+    .title-box p:last-child { margin: 8px 0 0; color: rgba(255,255,255,0.86); font-weight: 600; }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      border: 1px solid #edf2f7;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      color: var(--kke-dark-blue);
+      border-left: 4px solid var(--kke-blue);
+      padding-left: 10px;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+
+    label { display: block; font-weight: 700; font-size: 13px; color: #4b5563; }
+    .required { color: var(--danger); }
+
+    input, select, textarea {
+      width: 100%;
+      margin-top: 6px;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--kke-blue);
+      outline: none;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(0, 87, 168, 0.1);
+    }
+
+    .calc-box {
+      background: #f0f7ff;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 78px;
+    }
+
+    .calc-label { font-size: 11px; font-weight: 800; color: var(--kke-blue); text-transform: uppercase; }
+    .calc-value { font-size: 24px; font-weight: 900; color: var(--kke-dark-blue); }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      justify-content: center;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--kke-blue); color: white; }
+    .btn-primary:disabled { background: var(--gray); cursor: not-allowed; }
+    .btn-outline { background: white; border: 2px solid var(--kke-blue); color: var(--kke-blue); }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    th { background: #f8fafc; padding: 12px; font-size: 12px; border: 1px solid var(--border); color: var(--kke-dark-blue); }
+    td { padding: 6px; border: 1px solid var(--border); }
+    .station-cell { font-weight: 800; background: #f1f5f9; text-align: center; font-size: 14px; }
+
+    /* Messages */
+    .message-box {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .submit-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 16px 20px;
+      box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    /* History List */
+    .history-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      gap: 12px;
+    }
+
+    /* Dashboard */
+    .dashboard-note {
+      color: var(--gray);
+      margin-top: -8px;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .dashboard-scope-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 18px;
+      padding: 10px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+    }
+
+    .range-btn {
+      border: 1px solid #bfdbfe;
+      background: white;
+      color: var(--kke-dark-blue);
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .range-btn.active {
+      background: var(--kke-blue);
+      color: white;
+      border-color: var(--kke-blue);
+      box-shadow: 0 4px 12px rgba(0,87,168,0.18);
+    }
+
+    .dashboard-scope-label {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 6px;
+    }
+
+    .dashboard-range-heading {
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .chart-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 120px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .chart-row:last-child { border-bottom: none; }
+
+    .chart-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      color: var(--dark);
+      overflow-wrap: anywhere;
+    }
+
+    .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      flex: 0 0 12px;
+      background: var(--row-color, var(--kke-blue));
+    }
+
+    .bar-bg {
+      height: 20px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      width: var(--bar-width, 0%);
+      min-width: 3px;
+      background: var(--row-color, var(--kke-blue));
+    }
+
+    .chart-value {
+      text-align: right;
+      font-weight: 900;
+      color: var(--kke-dark-blue);
+    }
+
+    .leaderboard-item {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .leaderboard-item:last-child { border-bottom: none; }
+
+    .rank-badge {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: #eaf4ff;
+      color: var(--kke-dark-blue);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .flag-item {
+      border: 1px solid #fed7aa;
+      background: #fff7ed;
+      color: var(--warning);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .empty-state {
+      color: var(--gray);
+      text-align: center;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+
+
+    /* Daily / Weekly / Monthly Manager Metrics */
+    .period-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .period-card {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 87, 168, 0.05);
+    }
+
+    .period-card-title {
+      color: var(--kke-dark-blue);
+      font-size: 13px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    .period-main-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 950;
+      color: var(--kke-blue);
+      margin-bottom: 12px;
+    }
+
+    .period-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .period-mini {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 9px;
+    }
+
+    .period-mini-label {
+      color: var(--gray);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .period-mini-value {
+      color: var(--kke-dark-blue);
+      font-size: 16px;
+      font-weight: 950;
+      margin-top: 2px;
+    }
+
+
+    /* Work Area / Photo Upload */
+    .conditional-field {
+      display: none;
+    }
+
+    .helper-text {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--gray);
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .area-summary-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 78px;
+    }
+
+    .area-summary-title {
+      color: var(--kke-blue);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .area-summary-value {
+      color: var(--kke-dark-blue);
+      font-size: 22px;
+      font-weight: 950;
+      margin-top: 4px;
+    }
+
+    .photo-upload-box {
+      border: 2px dashed #bfdbfe;
+      background: #f8fbff;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .photo-file-list {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--gray);
+      font-weight: 700;
+    }
+
+    .photo-file-pill {
+      background: white;
+      border: 1px solid #dbeafe;
+      color: var(--kke-dark-blue);
+      border-radius: 999px;
+      padding: 7px 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .photo-link-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+
+    .photo-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf4ff;
+      color: var(--kke-dark-blue);
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+
+    @media (max-width: 768px) {
+      .tabs { overflow-x: auto; }
+      .tab-btn { min-width: 120px; }
+      .header-inner { grid-template-columns: 1fr; gap: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      .span-2, .span-3, .span-4 { grid-column: span 1; }
+      .brand-panel { padding: 10px; min-height: 110px; }
+      .brand-logo { max-width: 290px; max-height: 105px; }
+      .chart-row { grid-template-columns: 1fr; gap: 6px; }
+      .chart-value { text-align: left; }
+      .history-item { align-items: flex-start; flex-direction: column; }
+      .history-item > div:last-child { text-align: left !important; }
+    }
+
+    /* Manager Tools / Filters / Modal */
+    .tool-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .tool-row label { margin: 0; }
+
+    .small-btn {
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+    }
+
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-warning { background: #f59e0b; color: #111827; }
+
+    .history-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      margin-left: 6px;
+    }
+
+    .status-approved { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .status-review { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .status-rejected { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .status-revision { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.72);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: white;
+      border-radius: 22px;
+      max-width: 980px;
+      width: 100%;
+      max-height: 92vh;
+      overflow: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.32);
+      border: 1px solid rgba(0, 87, 168, 0.18);
+    }
+
+    .modal-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      position: sticky;
+      bottom: 0;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .audit-log {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      max-height: 220px;
+      overflow: auto;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    .audit-line {
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .audit-line:last-child { border-bottom: none; }
+
+    .trend-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      min-height: 170px;
+      align-items: end;
+      padding-top: 20px;
+    }
+
+    .trend-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      min-height: 160px;
+      gap: 8px;
+    }
+
+    .trend-bar {
+      width: 100%;
+      max-width: 48px;
+      border-radius: 10px 10px 3px 3px;
+      background: linear-gradient(180deg, var(--kke-blue), var(--kke-dark-blue));
+      min-height: 4px;
+    }
+
+    .trend-label { font-size: 11px; color: var(--gray); font-weight: 800; text-align:center; }
+    .trend-value { font-size: 11px; color: var(--kke-dark-blue); font-weight: 900; text-align:center; }
+
+
+    .transition-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .transition-card {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .transition-card-title {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--gray);
+      letter-spacing: 0.6px;
+    }
+
+    .transition-card-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--kke-dark-blue);
+      margin-top: 4px;
+    }
+
+    .transition-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.8fr 0.8fr 0.8fr 1.2fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+
+    .transition-row.header-row {
+      background: #f8fafc;
+      color: var(--kke-dark-blue);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .transition-row:last-child { border-bottom: none; }
+
+    @media (max-width: 768px) {
+      .transition-summary { grid-template-columns: 1fr; }
+      .transition-row { grid-template-columns: 1fr; gap: 4px; }
+      .transition-row.header-row { display: none; }
+    }
+
+
+    /* Transition Analytics Visual Surfacing */
+    .transition-hero {
+      background: linear-gradient(135deg, #003f7d 0%, #0057a8 58%, #0b75d1 100%);
+      color: white;
+      border-radius: 18px;
+      padding: 20px;
+      margin: 16px 0;
+      box-shadow: 0 12px 30px rgba(0, 87, 168, 0.18);
+    }
+
+    .transition-hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr repeat(3, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .transition-hero-main,
+    .transition-hero-stat {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 15px;
+      padding: 16px;
+    }
+
+    .transition-hero-label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.72);
+    }
+
+    .transition-hero-value {
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 950;
+      margin-top: 8px;
+    }
+
+    .transition-hero-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.82);
+      margin-top: 8px;
+      font-weight: 650;
+    }
+
+    .visual-metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .visual-panel {
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 15px;
+      background: #ffffff;
+    }
+
+    .visual-panel-title {
+      font-size: 13px;
+      color: var(--kke-dark-blue);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .metric-bar-row {
+      display: grid;
+      grid-template-columns: 88px 1fr 84px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 13px;
+    }
+
+    .metric-bar-row:last-child { border-bottom: none; }
+
+    .metric-bar-track {
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 12px;
+      overflow: hidden;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      min-width: 4px;
+    }
+
+    .transition-alert {
+      border-left: 5px solid #f97316;
+      background: #fff7ed;
+      color: #7c2d12;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 800;
+      margin-top: 14px;
+    }
+
+    .transition-route-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .transition-route-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .transition-route-title {
+      font-weight: 950;
+      color: var(--kke-blue);
+      margin-bottom: 4px;
+    }
+
+    .transition-route-meta {
+      font-size: 12px;
+      color: var(--gray);
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .transition-hero-grid { grid-template-columns: 1fr; }
+      .visual-metric-grid { grid-template-columns: 1fr; }
+      .metric-bar-row { grid-template-columns: 70px 1fr 70px; }
+      .transition-hero-value { font-size: 32px; }
+      .period-metrics-grid { grid-template-columns: 1fr; }
+    }
+
+
+    @media (max-width: 768px) {
+      .tool-row { grid-template-columns: 1fr; }
+      .history-item { flex-direction: column; align-items: stretch; gap: 10px; }
+      .history-actions { justify-content: flex-start; }
+      .trend-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="auth-overlay">
+  <div class="login-card">
+    <div class="login-logo-wrap">
+      <img src="logo.png" alt="KKE Concrete Lifting" class="login-logo" onerror="swapLogoOrFallback(this)">
+      <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+    </div>
+    <h1 style="color: var(--kke-blue); margin: 0 0 8px;">KKE Concrete</h1>
+    <p style="color: var(--gray); margin-bottom: 30px;">Field Operations Portal</p>
+    <button id="btnGoogleLogin" class="btn btn-primary" style="width: 100%; padding: 15px;">
+      Sign in with Google
+    </button>
+    <p id="authError" style="color: var(--danger); font-size: 12px; margin-top: 15px;"></p>
+    <p style="color: var(--gray); font-size: 11px; margin-top: 10px; line-height: 1.4;">For best results on mobile, open this site directly in Chrome or Safari instead of an in-app browser.</p>
+  </div>
+</div>
+
+<div class="page" id="main-content">
+  <!-- Navigation Tabs -->
+  <div class="tabs">
+    <button id="tabNew" class="tab-btn active">New Report</button>
+    <button id="tabHistory" class="tab-btn">History</button>
+    <button id="tabDashboard" class="tab-btn" style="display:none;">Dashboard</button>
+    <button id="btnLogout" class="tab-btn" style="color: var(--danger); flex: 0.4;">Logout</button>
+  </div>
+
+  <!-- Main Form Tab -->
+  <div id="new-form" class="tab-content active">
+    <div class="header">
+      <div class="header-topline"></div>
+      <div class="header-inner">
+        <div class="brand-panel">
+          <img src="logo.png" alt="KKE Concrete Lifting" class="brand-logo" onerror="swapLogoOrFallback(this)">
+          <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+        </div>
+        <div class="title-box">
+          <p class="eyebrow">Production & Profile</p>
+          <h1>Crew Profile Sheet</h1>
+          <p>Field report, GPS verification, production pounds, and road profile tracking.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusMessage" class="message-box"></div>
+
+    <form id="crewForm">
+      <div class="card">
+        <h2>Job Information</h2>
+        <div class="grid">
+          <label class="span-2">Date <span class="required">*</span><input name="date" type="date" required id="formDate"></label>
+          <label>City <span class="required">*</span>
+            <select name="city" required>
+              <option value="" disabled selected>Select City</option>
+              <option value="Celina">Celina</option>
+              <option value="The Colony">The Colony</option>
+              <option value="Coppel">Coppel</option>
+              <option value="Frisco">Frisco</option>
+              <option value="Frisco Parks Department">Frisco Parks Department</option>
+              <option value="Garland">Garland</option>
+              <option value="Highland Village">Highland Village</option>
+              <option value="Mckinney">Mckinney</option>
+              <option value="Prosper">Prosper</option>
+              <option value="Richardson">Richardson</option>
+              <option value="Sachse">Sachse</option>
+              <option value="Saginaw">Saginaw</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>Truck # <span class="required">*</span>
+            <select name="truckNumber" required>
+              <option value="" disabled selected>Select Truck</option>
+              <option value="102">102</option>
+              <option value="106">106</option>
+              <option value="107">107</option>
+              <option value="118">118</option>
+              <option value="119">119</option>
+              <option value="203">203</option>
+            </select>
+          </label>
+          <label class="span-4">Address / Location <span class="required">*</span>
+            <input id="jobAddress" name="address" required placeholder="Start typing address or job location">
+            <input id="addressLatitude" name="addressLatitude" type="hidden">
+            <input id="addressLongitude" name="addressLongitude" type="hidden">
+            <input id="googlePlaceId" name="googlePlaceId" type="hidden">
+            <div class="helper-text">Start typing and select the Google-suggested address to standardize spelling.</div>
+          </label>
+        </div>
+      </div>
+
+
+      <div class="card">
+        <h2>Work Area Details</h2>
+        <div class="grid">
+          <label>Work Area Type <span class="required">*</span>
+            <select name="workAreaType" id="workAreaType" required>
+              <option value="" disabled selected>Select Area Type</option>
+              <option value="Alley">Alley</option>
+              <option value="Driveway">Driveway</option>
+              <option value="Leadwalk">Leadwalk</option>
+             <option value="Sidewalk">Sidewalk</option>
+              <option value="ADA">ADA</option>
+              <option value="Street">Street</option>
+              <option value="Parking Lot">Parking Lot</option>
+              <option value="Pool">Pool</option>
+              <option value="Deck">Deck</option>
+              <option value="Patio">Patio</option>
+              <option value="Sport Court">Sport Court</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="helper-text">Use Street for road-profile jobs. Use dimensions below for patios, driveways, pool decks, sport courts, and other flat work.</div>
+          </label>
+<label>
+  Injection Type <span class="required">*</span>
+  <select name="injectionType" id="injectionType" required>
+    <option value="" disabled selected>Select Injection Type</option>
+    <option value="Method">Method</option>
+    <option value="Deep Injection">Deep Injection</option>
+  </select>
+  <div class="helper-text">
+    Method = standard 32" injection. Deep Injection = 4'+ stabilization injection.
+  </div>
+</label>
+          <label id="otherWorkAreaWrap" class="conditional-field">Other Area Type <span class="required">*</span>
+            <input name="workAreaOther" id="workAreaOther" placeholder="Example: loading dock, warehouse slab, sidewalk section">
+          </label>
+
+          <label>Lift Area Length (ft)
+            <input name="liftAreaLength" id="liftAreaLength" type="number" step="0.01" placeholder="Example: 12">
+          </label>
+
+          <label>Lift Area Width (ft)
+            <input name="liftAreaWidth" id="liftAreaWidth" type="number" step="0.01" placeholder="Example: 24">
+          </label>
+
+          <div class="area-summary-box">
+            <div class="area-summary-title">Calculated Work Area</div>
+            <div class="area-summary-value" id="liftAreaSqFtDisplay">—</div>
+          </div>
+
+          <label class="span-4">Area / Dimension Notes
+            <input name="liftAreaNotes" id="liftAreaNotes" placeholder="Example: 12' x 24' patio, west side by pool gate">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Crew & Time</h2>
+        <div class="grid">
+          <label>Truck Boss <span class="required">*</span><input name="crewLead" required></label>
+          <label>Helper 1<input name="helper1"></label>
+          <label>Helper 2<input name="helper2"></label>
+          <label>Helper 3<input name="helper3"></label>
+          <label>Helper 4<input name="helper4"></label>
+          <label>Start Time <span class="required">*</span><input name="startTime" id="startTime" type="time" required></label>
+          <label>Finish Time <span class="required">*</span><input name="finishTime" id="finishTime" type="time" required></label>
+          <div class="calc-box">
+            <div class="calc-label">Total Hours</div>
+            <div class="calc-value" id="totalHoursDisplay">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Production Data</h2>
+        <div class="grid">
+          <label>A Lbs Start <span class="required">*</span><input name="aMeterStart" id="aMeterStart" type="number" step="0.01" value="0" required></label>
+          <label>A Lbs Finish <span class="required">*</span><input name="aMeterFinish" id="aMeterFinish" type="number" step="0.01" required></label>
+          <label>B Lbs Start <span class="required">*</span><input name="bMeterStart" id="bMeterStart" type="number" step="0.01" value="0" required></label>
+          <label>B Lbs Finish <span class="required">*</span><input name="bMeterFinish" id="bMeterFinish" type="number" step="0.01" required></label>
+          <label>Clicks <span class="required">*</span><input name="clicks" type="number" required></label>
+          <label>Lift Height <input name="lift" placeholder="e.g. 1.5 in"></label>
+          <label class="span-2">Gen Run Time <input name="generatorRunTime"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap;">
+          <h2 style="margin:0;">Job Site GPS</h2>
+          <button class="btn btn-outline" type="button" id="btnGPS">📍 Capture Location</button>
+        </div>
+        <div class="grid">
+          <label>Latitude <span class="required">*</span><input name="gpsLatitude" id="gpsLatitude" required readonly placeholder="Capture location..."></label>
+          <label>Longitude <span class="required">*</span><input name="gpsLongitude" id="gpsLongitude" required readonly placeholder="Capture location..."></label>
+          <div class="span-2" style="display:flex; align-items:center; gap:10px; padding-top:20px;">
+             <input type="checkbox" name="locationConfirmed" id="locationConfirmed" style="width:20px; height:20px; margin:0;">
+             <label for="locationConfirmed" style="cursor:pointer">I confirm GPS location is correct</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="roadProfileCard">
+        <h2>Road Profile</h2>
+        <p class="dashboard-note road-profile-guidance">Street jobs use this station table for before/after profile readings. Non-street jobs can use dimensions in Work Area Details.</p>
+        <div class="grid">
+          <label>Total Length (ft)<input id="profileLength" name="linearFeet" type="number" value="100" step="10"></label>
+          <label>Interval (ft)<input id="profileInterval" type="number" value="10" step="1"></label>
+          <div class="span-2" style="padding-top:22px;">
+            <button class="btn btn-outline" type="button" id="btnBuildRows">Build Table Rows</button>
+          </div>
+        </div>
+        
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Station</th>
+                <th colspan="2">North/East Bound</th>
+                <th colspan="2">South/West Bound</th>
+              </tr>
+              <tr>
+                <th>Before</th><th>After</th>
+                <th>Before</th><th>After</th>
+              </tr>
+            </thead>
+            <tbody id="profileRows">
+              <!-- Rows added via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <div class="card">
+        <h2>Job Photos</h2>
+        <div class="photo-upload-box">
+          <label>Upload Pictures
+            <input id="jobPhotos" name="jobPhotos" type="file" accept="image/*" multiple>
+          </label>
+          <div class="helper-text">Optional. Add before, after, site condition, traffic control, or issue photos. Photos are uploaded to Firebase Storage and linked to the report.</div>
+          <div id="photoFileList" class="photo-file-list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Job Notes</h2>
+        <textarea name="notes" rows="4" placeholder="Mention any utilities, traffic control, or site issues..."></textarea>
+      </div>
+
+      <div class="submit-bar">
+        <button class="btn btn-primary" type="submit" id="submitBtn" style="width:100%;">
+          Save & Submit Report
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- History Tab -->
+  <div id="history" class="tab-content">
+    <div class="header">
+      <div class="header-topline"></div>
+      <div class="header-inner">
+        <div class="brand-panel">
+          <img src="logo.png" alt="KKE Concrete Lifting" class="brand-logo" onerror="swapLogoOrFallback(this)">
+          <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+        </div>
+        <div class="title-box">
+          <p class="eyebrow">Live Field Records</p>
+          <h1>Report History</h1>
+          <p>Submitted crew reports shown from Firestore in real time.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent Reports</h2>
+      <div class="tool-row">
+        <label>Search
+          <input id="historySearch" type="search" placeholder="Search city, truck, lead, address, notes...">
+        </label>
+        <label>City
+          <select id="historyCityFilter"><option value="">All Cities</option></select>
+        </label>
+        <label>Truck
+          <select id="historyTruckFilter"><option value="">All Trucks</option></select>
+        </label>
+        <label>Status
+          <select id="historyStatusFilter">
+            <option value="">Active Reports</option>
+            <option value="Needs Review">Needs Review</option>
+            <option value="Needs Revision">Needs Revision</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Deleted">Deleted / Recovery</option>
+            <option value="all">All Including Deleted</option>
+          </select>
+        </label>
+        <button class="btn btn-outline small-btn" type="button" id="btnClearFilters">Clear</button>
+      </div>
+      <div id="historyList">Loading reports...</div>
+    </div>
+  </div>
+
+  <!-- Manager Dashboard Tab -->
+  <div id="dashboard" class="tab-content">
+    <div class="header">
+      <div class="header-topline"></div>
+      <div class="header-inner">
+        <div class="brand-panel">
+          <img src="logo.png" alt="KKE Concrete Lifting" class="brand-logo" onerror="swapLogoOrFallback(this)">
+          <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+        </div>
+        <div class="title-box">
+          <p class="eyebrow">Manager Live Analytics</p>
+          <h1>Production Dashboard</h1>
+          <p>Live clicks, estimated lbs, flow meter lbs, and variance by report.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Manager Dashboard</h2>
+      <p class="dashboard-note">Live production metrics from submitted reports. Estimated lbs are calculated from clicks × 0.6 and compared against flow meter lbs.</p>
+      <div class="dashboard-scope-bar" id="dashboardScopeBar" aria-label="Dashboard time range">
+        <button class="range-btn" type="button" data-range="today">Today</button>
+        <button class="range-btn" type="button" data-range="week">This Week</button>
+        <button class="range-btn active" type="button" data-range="month">This Month</button>
+        <button class="range-btn" type="button" data-range="quarter">This Quarter</button>
+        <button class="range-btn" type="button" data-range="ytd">YTD</button>
+        <button class="range-btn" type="button" data-range="all">All Time</button>
+        <div class="dashboard-scope-label">Showing: <span id="dashboardScopeLabel" style="margin-left:4px; color:var(--kke-dark-blue);">This Month</span></div>
+      </div>
+      <div class="grid">
+        <div class="calc-box">
+          <div class="calc-label">Clicks</div>
+          <div class="calc-value" id="dashTotalClicks">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Estimated Lbs</div>
+          <div class="calc-value" id="dashEstimatedLbs">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Flow Meter Lbs</div>
+          <div class="calc-value" id="dashFlowMeterLbs">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Difference %</div>
+          <div class="calc-value" id="dashDifferencePercent">0%</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Difference Lbs</div>
+          <div class="calc-value" id="dashDifferenceLbs">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Daily / Weekly / Monthly Snapshot</h2>
+      <p class="dashboard-note">These update automatically from the report date. Week is Sunday through Saturday.</p>
+
+      <div class="period-metrics-grid">
+        <div class="period-card">
+          <div class="period-card-title">Today</div>
+          <div class="period-main-value"><span id="dashTodayPounds">0</span> lbs</div>
+          <div class="period-mini-grid">
+            <div class="period-mini">
+              <div class="period-mini-label">Hours</div>
+              <div class="period-mini-value" id="dashTodayHours">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Lbs / Hr</div>
+              <div class="period-mini-value" id="dashTodayLbsPerHour">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Reports</div>
+              <div class="period-mini-value" id="dashTodayReports">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Best Truck</div>
+              <div class="period-mini-value" id="dashTodayBestTruck">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="period-card">
+          <div class="period-card-title">This Week</div>
+          <div class="period-main-value"><span id="dashWeekPounds">0</span> lbs</div>
+          <div class="period-mini-grid">
+            <div class="period-mini">
+              <div class="period-mini-label">Hours</div>
+              <div class="period-mini-value" id="dashWeekHours">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Lbs / Hr</div>
+              <div class="period-mini-value" id="dashWeekLbsPerHour">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Reports</div>
+              <div class="period-mini-value" id="dashWeekReports">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Best Truck</div>
+              <div class="period-mini-value" id="dashWeekBestTruck">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="period-card">
+          <div class="period-card-title">This Month</div>
+          <div class="period-main-value"><span id="dashMonthPounds">0</span> lbs</div>
+          <div class="period-mini-grid">
+            <div class="period-mini">
+              <div class="period-mini-label">Hours</div>
+              <div class="period-mini-value" id="dashMonthHours">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Lbs / Hr</div>
+              <div class="period-mini-value" id="dashMonthLbsPerHour">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Reports</div>
+              <div class="period-mini-value" id="dashMonthReports">0</div>
+            </div>
+            <div class="period-mini">
+              <div class="period-mini-label">Best Truck</div>
+              <div class="period-mini-value" id="dashMonthBestTruck">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Top Efficiency</h2>
+      <div class="grid">
+        <div class="calc-box">
+          <div class="calc-label">Best Truck Lbs / Hr</div>
+          <div class="calc-value" id="dashBestTruck">—</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Best Crew Lbs / Hr</div>
+          <div class="calc-value" id="dashBestCrew">—</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">This Month Pounds</div>
+          <div class="calc-value" id="dashMonthPoundsLarge">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">This Month Reports</div>
+          <div class="calc-value" id="dashMonthReportsLarge">0</div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="card" id="transitionAnalyticsCard">
+      <h2>Dispatch Efficiency — Job-to-Job Transition / GPS Travel</h2>
+      <p class="dashboard-note">This is the travel and downtime metric. It is calculated from same-day reports by the same truck: previous finish time to next job start time, with GPS distance between job pins.</p>
+
+      <div class="transition-hero">
+        <div class="transition-hero-grid">
+          <div class="transition-hero-main">
+            <div class="transition-hero-label">Average Transition Time</div>
+            <div class="transition-hero-value" id="dashAvgTransitionHero">0 min</div>
+            <div class="transition-hero-sub" id="dashTransitionSummaryText">Waiting for at least two same-day jobs from the same truck.</div>
+          </div>
+          <div class="transition-hero-stat">
+            <div class="transition-hero-label">Avg GPS Miles</div>
+            <div class="transition-hero-value" id="dashAvgTransitionMilesHero">0</div>
+            <div class="transition-hero-sub">between job pins</div>
+          </div>
+          <div class="transition-hero-stat">
+            <div class="transition-hero-label">Avg Travel MPH</div>
+            <div class="transition-hero-value" id="dashAvgTravelMphHero">0</div>
+            <div class="transition-hero-sub">based on GPS miles/time</div>
+          </div>
+          <div class="transition-hero-stat">
+            <div class="transition-hero-label">Longest Transition</div>
+            <div class="transition-hero-value" id="dashLongestTransitionHero">0 min</div>
+            <div class="transition-hero-sub">same-day truck gap</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="calc-box">
+          <div class="calc-label">Avg Transition</div>
+          <div class="calc-value" id="dashAvgTransition">0 min</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Avg GPS Miles</div>
+          <div class="calc-value" id="dashAvgTransitionMiles">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Avg Travel MPH</div>
+          <div class="calc-value" id="dashAvgTravelMph">0</div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-label">Longest Transition</div>
+          <div class="calc-value" id="dashLongestTransition">0 min</div>
+        </div>
+      </div>
+
+      <div id="transitionAlert" class="transition-alert" style="display:none;"></div>
+
+      <div class="visual-metric-grid">
+        <div class="visual-panel">
+          <div class="visual-panel-title">Average Transition Time by Truck</div>
+          <div id="transitionTruckChart" class="empty-state">No transition data yet.</div>
+        </div>
+        <div class="visual-panel">
+          <div class="visual-panel-title">Average GPS Miles by Truck</div>
+          <div id="transitionMilesChart" class="empty-state">No GPS transition data yet.</div>
+        </div>
+      </div>
+
+      <div class="visual-metric-grid">
+        <div class="visual-panel">
+          <div class="visual-panel-title">Longest Job-to-Job Gaps</div>
+          <div id="transitionLongestList" class="empty-state">No transition data yet.</div>
+        </div>
+        <div class="visual-panel">
+          <div class="visual-panel-title">Most Recent Job-to-Job Routes</div>
+          <div id="transitionRecentRoutes" class="empty-state">No route data yet.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 style="margin:0 0 8px; color:var(--kke-dark-blue);">Detailed Transition Log</h3>
+        <div id="transitionMetrics" class="empty-state">No transition data yet.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pounds Pumped by City <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="cityMetrics" class="empty-state">No data yet.</div>
+    </div>
+
+    <div class="card">
+      <h2>Pounds Pumped by Truck <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="truckMetrics" class="empty-state">No data yet.</div>
+    </div>
+
+
+    <div class="card">
+      <h2>Pounds Pumped by Work Area Type <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="workAreaMetrics" class="empty-state">No data yet.</div>
+    </div>
+
+    <div class="card">
+      <h2>Truck Efficiency — Lbs Per Hour <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="truckEfficiencyMetrics" class="empty-state">No data yet.</div>
+    </div>
+
+    <div class="card">
+      <h2>Crew Efficiency Leaderboard — Lbs Per Hour <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="crewMetrics" class="empty-state">No data yet.</div>
+    </div>
+
+    <div class="card">
+      <h2>Production Trend — Last 7 Report Days <span class="dashboard-range-heading">(Selected Range)</span></h2>
+      <div id="trendMetrics" class="empty-state">No trend data yet.</div>
+    </div>
+
+    <div class="card">
+      <h2>Reports Needing Review</h2>
+      <div id="flaggedReports" class="empty-state">No flagged reports.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Manager Edit Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h2 style="margin:0; border:0; padding:0;">Manager Edit Report</h2>
+        <div id="editModalSub" style="font-size:12px; color:var(--gray); margin-top:4px;">Modify report fields and save an audit trail.</div>
+      </div>
+      <button class="btn btn-outline small-btn" type="button" id="btnCloseEditModal">Close</button>
+    </div>
+    <div class="modal-body">
+      <form id="editReportForm">
+        <input type="hidden" id="editDocId">
+        <div class="grid">
+          <label>Date<input id="editDate" type="date"></label>
+          <label>City<input id="editCity"></label>
+          <label>Truck #<input id="editTruckNumber"></label>
+          <label>Crew Lead<input id="editCrewLead"></label>
+          <label class="span-4">Address / Location<input id="editAddress"></label>
+          <label>Work Area Type
+            <select id="editWorkAreaType">
+              <option value="">Select Area Type</option>
+              <option value="Alley">Alley</option>
+              <option value="Driveway">Driveway</option>
+              <option value="Leadwalk">Leadwalk</option>
+             <option value="Sidewalk">Sidewalk</option>
+              <option value="ADA">ADA</option>
+              <option value="Street">Street</option>
+              <option value="Parking Lot">Parking Lot</option>
+              <option value="Pool">Pool</option>
+              <option value="Deck">Deck</option>
+              <option value="Patio">Patio</option>
+              <option value="Sport Court">Sport Court</option>
+              <option value="Other">Other</option>
+            </select>
+          <label>Injection Type
+  <select id="editInjectionType">
+    <option value="">Select Injection Type</option>
+    <option value="Method">Method</option>
+    <option value="Deep Injection">Deep Injection</option>
+  </select>
+          
+          <label>Other Area Type<input id="editWorkAreaOther" placeholder="Only if Other"></label>
+          <label>Lift Area Length (ft)<input id="editLiftAreaLength" type="number" step="0.01"></label>
+          <label>Lift Area Width (ft)<input id="editLiftAreaWidth" type="number" step="0.01"></label>
+          <label class="span-4">Area / Dimension Notes<input id="editLiftAreaNotes"></label>
+          <label>A Lbs Start<input id="editAMeterStart" type="number" step="0.01"></label>
+          <label>A Lbs Finish<input id="editAMeterFinish" type="number" step="0.01"></label>
+          <label>B Lbs Start<input id="editBMeterStart" type="number" step="0.01"></label>
+          <label>B Lbs Finish<input id="editBMeterFinish" type="number" step="0.01"></label>
+          <label>Clicks<input id="editClicks" type="number" step="1"></label>
+          <label>Total Hours<input id="editTotalHours" type="number" step="0.01"></label>
+          <label>Linear Feet<input id="editLinearFeet" type="number" step="1"></label>
+          <label>GPS Latitude<input id="editGpsLatitude" type="number" step="0.000001"></label>
+          <label>GPS Longitude<input id="editGpsLongitude" type="number" step="0.000001"></label>
+          <label>Approval Status
+            <select id="editApprovalStatus">
+              <option value="Needs Review">Needs Review</option>
+              <option value="Needs Revision">Needs Revision</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </label>
+          <label>Manager Initials<input id="editManagerInitials" placeholder="Optional"></label>
+          <label class="span-4">Crew Notes<textarea id="editNotes" rows="3"></textarea></label>
+          <label class="span-4">Manager Notes<textarea id="editManagerNotes" rows="3" placeholder="Internal manager notes, corrections, or approval comments..."></textarea></label>
+        </div>
+      </form>
+      <div style="margin-top:18px;">
+        <h2>Report Photos</h2>
+        <div id="editPhotoLinks" class="empty-state">No photos attached.</div>
+      </div>
+      <div style="margin-top:18px;">
+        <h2>Audit Trail</h2>
+        <div id="auditTrailBox" class="audit-log">No audit entries yet.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" type="button" id="btnPrintReport">PDF / Print</button>
+      <button class="btn btn-outline" type="button" id="btnCancelEdit">Cancel</button>
+      <button class="btn btn-primary" type="button" id="btnSaveEdit">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // This function is intentionally outside the module script so inline image onerror can call it.
+  function swapLogoOrFallback(img) {
+    if (img.dataset.triedJpg !== 'true') {
+      img.dataset.triedJpg = 'true';
+      img.src = 'logo.jpg';
+      return;
+    }
+    img.style.display = 'none';
+    const fallback = img.nextElementSibling;
+    if (fallback) fallback.style.display = 'block';
+  }
+</script>
+<script>
+  function setCityFromGooglePlace(place) {
+    const citySelect = document.querySelector('select[name="city"]');
+    if (!citySelect || !place.address_components) return;
+
+    let city = "";
+
+    place.address_components.forEach(component => {
+      if (component.types.includes("locality")) city = component.long_name;
+      if (!city && component.types.includes("sublocality")) city = component.long_name;
+      if (!city && component.types.includes("administrative_area_level_3")) city = component.long_name;
+    });
+
+    if (!city) return;
+
+    const matchingOption = Array.from(citySelect.options).find(option =>
+      option.value.toLowerCase() === city.toLowerCase()
+    );
+
+    citySelect.value = matchingOption ? matchingOption.value : "Other";
+  }
+
+  window.initKKEAddressAutocomplete = function () {
+    const addressInput = document.getElementById("jobAddress");
+
+    if (addressInput && window.google?.maps?.places) {
+      const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+        componentRestrictions: { country: "us" },
+        fields: ["formatted_address", "geometry", "place_id", "address_components"],
+        types: ["address"]
+      });
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place || !place.geometry) return;
+
+        addressInput.value = place.formatted_address || addressInput.value;
+
+        const addressLat = document.getElementById("addressLatitude");
+        const addressLng = document.getElementById("addressLongitude");
+        const placeId = document.getElementById("googlePlaceId");
+
+        if (addressLat) addressLat.value = place.geometry.location.lat().toFixed(6);
+        if (addressLng) addressLng.value = place.geometry.location.lng().toFixed(6);
+        if (placeId) placeId.value = place.place_id || "";
+
+        setCityFromGooglePlace(place);
+      });
+    }
+
+    const editAddressInput = document.getElementById("editAddress");
+
+    if (editAddressInput && window.google?.maps?.places) {
+      const editAutocomplete = new google.maps.places.Autocomplete(editAddressInput, {
+        componentRestrictions: { country: "us" },
+        fields: ["formatted_address"],
+        types: ["address"]
+      });
+
+      editAutocomplete.addListener("place_changed", () => {
+        const place = editAutocomplete.getPlace();
+        if (place?.formatted_address) editAddressInput.value = place.formatted_address;
+      });
+    }
+  };
+</script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEvO2mCAjlruoWq9VNEXnEX2lnBateqNk&libraries=places&callback=initKKEAddressAutocomplete"
+  async
+  defer>
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc as firestoreDoc, updateDoc, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+  // --- FIREBASE CONFIG ---
+  const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+      apiKey: "AIzaSyA0D2DxYi-ouBVavw_uWbp8YPuvq1wNFnI",
+      authDomain: "kke-crew-profile-sheet.firebaseapp.com",
+      projectId: "kke-crew-profile-sheet",
+      storageBucket: "kke-crew-profile-sheet.firebasestorage.app",
+      messagingSenderId: "154350100370",
+      appId: "1:154350100370:web:baa9e7c9d433ecf93d6b4b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'kke-profile-sheet-main';
+
+  const ALLOWED_USERS = [
+    "waltertimms365@gmail.com",
+    "varga307188@gmail.com",
+    "kkeincinfo@gmail.com",
+    "steverickenbrode@gmail.com",
+    "isaiah051812@gmail.com",
+    "cosmecharles88@gmail.com",
+    "kyleteel004@gmail.com",
+    "logan95mc@gmail.com",
+    "jhiser819@gmail.com"
+  ];
+
+  const MANAGER_USERS = [
+  "waltertimms365@gmail.com",
+  "kkeincinfo@gmail.com",
+  "steverickenbrode@gmail.com",
+  "isaiah051812@gmail.com",
+  "cosmecharles88@gmail.com"
+];
+
+  const TRUCK_COLORS = {
+    "102": "#0057a8",
+    "106": "#16a34a",
+    "107": "#f97316",
+    "118": "#7c3aed",
+    "119": "#0891b2",
+    "203": "#dc2626",
+    "Unknown Truck": "#6b7280"
+  };
+
+  const CITY_COLORS = {
+    "Celina": "#0057a8",
+    "The Colony": "#0f766e",
+    "Coppel": "#9333ea",
+    "Frisco": "#ea580c",
+    "Frisco Parks Department": "#16a34a",
+    "Garland": "#dc2626",
+    "Highland Village": "#2563eb",
+    "Mckinney": "#ca8a04",
+    "Prosper": "#0891b2",
+    "Richardson": "#7c3aed",
+    "Sachse": "#be123c",
+    "Saginaw": "#4d7c0f",
+    "Other": "#6b7280",
+    "Unknown City": "#6b7280"
+  };
+
+  const FALLBACK_COLORS = ["#0057a8", "#16a34a", "#f97316", "#7c3aed", "#dc2626", "#0891b2", "#ca8a04", "#be123c"];
+
+  let isCurrentUserManager = false;
+  let historyUnsubscribe = null;
+  let dashboardUnsubscribe = null;
+  let allReports = [];
+  let currentEditReport = null;
+  let dashboardRange = 'month';
+  let latestDashboardReports = [];
+
+  // --- AUTH LOGIC ---
+  const authOverlay = document.getElementById('auth-overlay');
+  const mainContent = document.getElementById('main-content');
+  const loginError = document.getElementById('authError');
+
+  function getFriendlyAuthError(err) {
+    const code = err?.code || '';
+    const message = err?.message || String(err || 'Unknown error');
+
+    if (code.includes('unauthorized-domain')) {
+      return 'This website domain is not authorized in Firebase Authentication settings.';
+    }
+
+    if (message.includes('missing initial state') || code.includes('argument-error')) {
+      return 'Google sign-in could not finish because this browser blocked the login window or storage. Open the site directly in Chrome/Safari, then try again.';
+    }
+
+    if (code.includes('popup-blocked') || code.includes('popup-closed-by-user')) {
+      return 'The Google sign-in window was blocked or closed. Try again and allow popups for this site, or open the site directly in Chrome/Safari.';
+    }
+
+    return message;
+  }
+
+  document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
+    try {
+      loginError.textContent = "Opening Google sign-in...";
+      await signInWithPopup(auth, provider);
+      loginError.textContent = "";
+    } catch (err) {
+      console.error(err);
+      loginError.textContent = "Sign-in failed: " + getFriendlyAuthError(err);
+    }
+  });
+
+  document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
+
+  document.getElementById('dashboardScopeBar')?.addEventListener('click', (event) => {
+    const button = event.target.closest('.range-btn[data-range]');
+    if (!button) return;
+    setDashboardRange(button.dataset.range);
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (historyUnsubscribe) {
+      historyUnsubscribe();
+      historyUnsubscribe = null;
+    }
+    if (dashboardUnsubscribe) {
+      dashboardUnsubscribe();
+      dashboardUnsubscribe = null;
+    }
+
+    if (user) {
+      const email = String(user.email || '').toLowerCase();
+
+      if (!ALLOWED_USERS.includes(email)) {
+        signOut(auth);
+        loginError.textContent = "Access denied. This email is not approved for KKE field access.";
+        return;
+      }
+
+      isCurrentUserManager = MANAGER_USERS.includes(email);
+      authOverlay.style.display = 'none';
+      mainContent.style.display = 'block';
+
+      const dashboardTab = document.getElementById('tabDashboard');
+      if (dashboardTab) dashboardTab.style.display = isCurrentUserManager ? 'block' : 'none';
+
+      loadHistory();
+      if (isCurrentUserManager) loadDashboard();
+      restoreLocalDraft();
+    } else {
+      isCurrentUserManager = false;
+      authOverlay.style.display = 'flex';
+      mainContent.style.display = 'none';
+      const dashboardTab = document.getElementById('tabDashboard');
+      if (dashboardTab) dashboardTab.style.display = 'none';
+      switchTab('new-form');
+    }
+  });
+// --- LOCAL DRAFT AUTOSAVE ---
+const DRAFT_KEY = "kkeCrewProfileDraft_v1";
+
+function saveDraftLocally() {
+  const form = document.getElementById("crewForm");
+  if (!form) return;
+
+  const formData = new FormData(form);
+  const draft = {};
+
+  formData.forEach((value, key) => {
+    draft[key] = value;
+  });
+
+  draft.savedAt = new Date().toLocaleString();
+
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreLocalDraft() {
+  const form = document.getElementById("crewForm");
+  if (!form) return;
+
+  const saved = localStorage.getItem(DRAFT_KEY);
+  if (!saved) return;
+
+  const draft = JSON.parse(saved);
+
+  Object.keys(draft).forEach((key) => {
+    const field = form.elements[key];
+    if (field && key !== "savedAt") {
+      if (field.type === "checkbox") {
+        field.checked = draft[key] === "on" || draft[key] === true;
+      } else {
+        field.value = draft[key];
+      }
+    }
+  });
+
+  showMessage("Draft restored from this device. Last saved: " + draft.savedAt, "success");
+
+  if (typeof calculateHours === "function") calculateHours();
+  if (typeof calculateLiftArea === "function") calculateLiftArea();
+}
+
+function clearLocalDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+document.addEventListener("input", (e) => {
+  if (e.target.closest("#crewForm")) {
+    saveDraftLocally();
+  }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target.closest("#crewForm")) {
+    saveDraftLocally();
+  }
+});
+  // --- UI LOGIC ---
+  const dateInput = document.getElementById('formDate');
+  if (dateInput) dateInput.valueAsDate = new Date();
+
+  const switchTab = (tabId) => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const btnId =
+      tabId === 'new-form' ? 'tabNew' :
+      tabId === 'history' ? 'tabHistory' :
+      tabId === 'dashboard' ? 'tabDashboard' :
+      'tabNew';
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+    const content = document.getElementById(tabId);
+    if (content) content.classList.add('active');
+  };
+
+  document.getElementById('tabNew').addEventListener('click', () => switchTab('new-form'));
+  document.getElementById('tabHistory').addEventListener('click', () => switchTab('history'));
+  document.getElementById('tabDashboard')?.addEventListener('click', () => {
+    if (!isCurrentUserManager) {
+      showMessage("Dashboard access is restricted to managers.", "error");
+      return;
+    }
+    switchTab('dashboard');
+  });
+
+  function showMessage(text, type = 'success') {
+    const box = document.getElementById('statusMessage');
+    if (!box) return;
+    box.textContent = text;
+    box.style.display = 'block';
+    box.style.backgroundColor = type === 'success' ? '#f0fdf4' : '#fef2f2';
+    box.style.color = type === 'success' ? '#166534' : '#b91c1c';
+    box.style.border = `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (type === 'success') setTimeout(() => box.style.display = 'none', 5000);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function fmtNumber(value, decimals = 0) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return decimals > 0 ? (0).toFixed(decimals) : '0';
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  function getReportClicks(doc) {
+    const clicks = Number(doc.clicks || 0);
+    return Number.isFinite(clicks) && clicks > 0 ? clicks : 0;
+  }
+
+  function getReportEstimatedPounds(doc) {
+    return getReportClicks(doc) * 0.6;
+  }
+
+  function getReportFlowMeterPounds(doc) {
+    if (Number.isFinite(Number(doc.flowMeterPounds))) return Number(doc.flowMeterPounds);
+    const aStart = Number(doc.aMeterStart || 0);
+    const aFinish = Number(doc.aMeterFinish || 0);
+    const bStart = Number(doc.bMeterStart || 0);
+    const bFinish = Number(doc.bMeterFinish || 0);
+    return Math.max(0, aFinish - aStart) + Math.max(0, bFinish - bStart);
+  }
+
+  function getReportPounds(doc) {
+    return getReportEstimatedPounds(doc);
+  }
+
+  function getPoundComparison(doc) {
+    const clicks = getReportClicks(doc);
+    const estimatedPounds = getReportEstimatedPounds(doc);
+    const flowMeterPounds = getReportFlowMeterPounds(doc);
+    const differencePounds = estimatedPounds - flowMeterPounds;
+    const differencePercent = flowMeterPounds > 0 ? (differencePounds / flowMeterPounds) * 100 : 0;
+    return { clicks, estimatedPounds, flowMeterPounds, differencePounds, differencePercent };
+  }
+
+  function getReportHours(doc) {
+    const hours = Number(doc.totalHours || 0);
+    return Number.isFinite(hours) && hours > 0 ? hours : 0;
+  }
+
+  function getColor(name, colorMap) {
+    if (colorMap[name]) return colorMap[name];
+    let total = 0;
+    String(name || '').split('').forEach(char => total += char.charCodeAt(0));
+    return FALLBACK_COLORS[total % FALLBACK_COLORS.length];
+  }
+
+  function isSameDate(dateValue, compareDate) {
+    if (!dateValue) return false;
+    const d = new Date(`${dateValue}T00:00:00`);
+    return d.getFullYear() === compareDate.getFullYear() &&
+      d.getMonth() === compareDate.getMonth() &&
+      d.getDate() === compareDate.getDate();
+  }
+
+  function isThisWeek(dateValue) {
+    if (!dateValue) return false;
+    const now = new Date();
+    const date = new Date(`${dateValue}T00:00:00`);
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay());
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return date >= start && date < end;
+  }
+
+
+  function parseReportDate(dateValue) {
+    if (!dateValue) return null;
+    const date = new Date(`${dateValue}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function getPeriodRanges(now = new Date()) {
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(todayStart.getDate() + 1);
+
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - todayStart.getDay());
+
+    const nextWeekStart = new Date(weekStart);
+    nextWeekStart.setDate(weekStart.getDate() + 7);
+
+    const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
+    const nextMonthStart = new Date(todayStart.getFullYear(), todayStart.getMonth() + 1, 1);
+
+    return {
+      today: { start: todayStart, end: tomorrowStart },
+      week: { start: weekStart, end: nextWeekStart },
+      month: { start: monthStart, end: nextMonthStart }
+    };
+  }
+
+  function isDateInRange(dateValue, range) {
+    const date = parseReportDate(dateValue);
+    if (!date || !range) return false;
+    return date >= range.start && date < range.end;
+  }
+
+  function getDashboardRange(rangeKey = dashboardRange, now = new Date()) {
+    const ranges = getPeriodRanges(now);
+    const todayStart = ranges.today.start;
+
+    if (rangeKey === 'quarter') {
+      const quarterStartMonth = Math.floor(todayStart.getMonth() / 3) * 3;
+      return {
+        start: new Date(todayStart.getFullYear(), quarterStartMonth, 1),
+        end: new Date(todayStart.getFullYear(), quarterStartMonth + 3, 1),
+        label: 'This Quarter'
+      };
+    }
+
+    if (rangeKey === 'ytd') {
+      return {
+        start: new Date(todayStart.getFullYear(), 0, 1),
+        end: ranges.today.end,
+        label: 'Year to Date'
+      };
+    }
+
+    if (rangeKey === 'all') {
+      return { start: null, end: null, label: 'All Time' };
+    }
+
+    if (rangeKey === 'today') return { ...ranges.today, label: 'Today' };
+    if (rangeKey === 'week') return { ...ranges.week, label: 'This Week' };
+    return { ...ranges.month, label: 'This Month' };
+  }
+
+  function filterReportsByDashboardRange(docs, rangeKey = dashboardRange) {
+    const range = getDashboardRange(rangeKey);
+    if (!range.start || !range.end) return docs;
+    return docs.filter(report => isDateInRange(report.date, range));
+  }
+
+  function updateDashboardRangeButtons() {
+    document.querySelectorAll('.range-btn[data-range]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.range === dashboardRange);
+    });
+    setText('dashboardScopeLabel', getDashboardRange(dashboardRange).label);
+  }
+
+  function setDashboardRange(rangeKey) {
+    dashboardRange = rangeKey || 'month';
+    updateDashboardRangeButtons();
+    if (latestDashboardReports.length) renderDashboardFromReports(latestDashboardReports);
+  }
+
+  function getPeriodMetrics(docs, range) {
+    const metrics = {
+      pounds: 0,
+      hours: 0,
+      reports: 0,
+      byTruck: {}
+    };
+
+    docs.forEach(report => {
+      if (!isDateInRange(report.date, range)) return;
+
+      const pounds = getReportPounds(report);
+      const hours = getReportHours(report);
+      const truck = report.truckNumber || 'Unknown Truck';
+
+      metrics.pounds += pounds;
+      metrics.hours += hours;
+      metrics.reports += 1;
+
+      if (!metrics.byTruck[truck]) metrics.byTruck[truck] = { name: truck, pounds: 0, hours: 0, reports: 0 };
+      metrics.byTruck[truck].pounds += pounds;
+      metrics.byTruck[truck].hours += hours;
+      metrics.byTruck[truck].reports += 1;
+    });
+
+    metrics.poundsPerHour = metrics.hours > 0 ? metrics.pounds / metrics.hours : 0;
+    metrics.bestTruck = Object.values(metrics.byTruck)
+      .map(item => ({ ...item, poundsPerHour: item.hours > 0 ? item.pounds / item.hours : 0 }))
+      .sort((a, b) => b.poundsPerHour - a.poundsPerHour)[0] || null;
+
+    return metrics;
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function updatePeriodMetricCards(docs) {
+    const ranges = getPeriodRanges(new Date());
+    const periods = {
+      Today: getPeriodMetrics(docs, ranges.today),
+      Week: getPeriodMetrics(docs, ranges.week),
+      Month: getPeriodMetrics(docs, ranges.month)
+    };
+
+    Object.entries(periods).forEach(([name, metrics]) => {
+      setText(`dash${name}Pounds`, fmtNumber(metrics.pounds, 0));
+      setText(`dash${name}Hours`, fmtNumber(metrics.hours, 2));
+      setText(`dash${name}LbsPerHour`, fmtNumber(metrics.poundsPerHour, 0));
+      setText(`dash${name}Reports`, fmtNumber(metrics.reports, 0));
+      setText(`dash${name}BestTruck`, metrics.bestTruck ? `${metrics.bestTruck.name}` : '—');
+    });
+
+    setText('dashMonthPoundsLarge', fmtNumber(periods.Month.pounds, 0));
+    setText('dashMonthReportsLarge', fmtNumber(periods.Month.reports, 0));
+  }
+
+  function renderBarChart(dataObject, unitLabel, colorMap, sortMode = 'value') {
+    const entries = Object.entries(dataObject)
+      .map(([name, value]) => ({ name, value: Number(value) || 0 }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => sortMode === 'name' ? a.name.localeCompare(b.name) : b.value - a.value);
+
+    if (!entries.length) return `<div class="empty-state">No data yet.</div>`;
+
+    const max = Math.max(...entries.map(item => item.value), 1);
+    return `<div class="chart-wrap">${entries.map(item => {
+      const width = Math.max(3, (item.value / max) * 100);
+      const color = getColor(item.name, colorMap);
+      return `
+        <div class="chart-row" style="--row-color:${color}; --bar-width:${width}%">
+          <div class="chart-label"><span class="color-dot"></span>${escapeHtml(item.name)}</div>
+          <div class="bar-bg"><div class="bar-fill"></div></div>
+          <div class="chart-value">${fmtNumber(item.value, unitLabel === 'lbs/hr' ? 0 : 0)} ${unitLabel}</div>
+        </div>
+      `;
+    }).join('')}</div>`;
+  }
+
+  function buildLeaderboard(entries, valueKey, unitLabel, subTextBuilder) {
+    if (!entries.length) return `<div class="empty-state">No data yet.</div>`;
+    return entries.map((item, index) => `
+      <div class="leaderboard-item">
+        <div class="rank-badge">${index + 1}</div>
+        <div>
+          <div style="font-weight:900; color:var(--dark);">${escapeHtml(item.name)}</div>
+          <div style="font-size:12px; color:var(--gray);">${subTextBuilder(item)}</div>
+        </div>
+        <div style="text-align:right; font-weight:900; color:var(--kke-dark-blue);">
+          ${fmtNumber(item[valueKey], 0)} ${unitLabel}
+        </div>
+      </div>
+    `).join('');
+  }
+
+
+  function getWorkAreaDisplay(report) {
+    const areaType = report.workAreaType || '';
+    if (areaType === 'Other' && report.workAreaOther) return report.workAreaOther;
+    return areaType || 'Not Listed';
+  }
+
+  function calculateLiftAreaSqFt(length, width) {
+    const l = Number(length || 0);
+    const w = Number(width || 0);
+    return l > 0 && w > 0 ? l * w : 0;
+  }
+
+  function toggleWorkAreaFields() {
+    const type = document.getElementById('workAreaType')?.value || '';
+    const otherWrap = document.getElementById('otherWorkAreaWrap');
+    const otherInput = document.getElementById('workAreaOther');
+    const profileCard = document.getElementById('roadProfileCard');
+    const isOther = type === 'Other';
+
+    if (otherWrap) otherWrap.style.display = isOther ? 'block' : 'none';
+    if (otherInput) otherInput.required = isOther;
+
+    if (profileCard) {
+      const note = profileCard.querySelector('.road-profile-guidance');
+      if (note) {
+        note.textContent = type === 'Street'
+          ? 'Street selected: use this station table for road profile before/after readings.'
+          : 'Non-street selected: use this section only if profile readings are needed. Otherwise use Work Area Dimensions above.';
+      }
+    }
+  }
+
+  function updateLiftAreaSqFtDisplay() {
+    const length = document.getElementById('liftAreaLength')?.value;
+    const width = document.getElementById('liftAreaWidth')?.value;
+    const display = document.getElementById('liftAreaSqFtDisplay');
+    const sqFt = calculateLiftAreaSqFt(length, width);
+    if (display) display.textContent = sqFt > 0 ? `${fmtNumber(sqFt, 2)} sq ft` : '—';
+  }
+
+  function renderSelectedPhotoNames() {
+    const input = document.getElementById('jobPhotos');
+    const list = document.getElementById('photoFileList');
+    if (!input || !list) return;
+
+    const files = Array.from(input.files || []);
+    if (!files.length) {
+      list.innerHTML = '';
+      return;
+    }
+
+    list.innerHTML = files.map((file, index) => `
+      <div class="photo-file-pill">Photo ${index + 1}: ${escapeHtml(file.name)} (${fmtNumber(file.size / 1024, 0)} KB)</div>
+    `).join('');
+  }
+
+  function safeFileName(name) {
+    return String(name || 'photo')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .slice(0, 80);
+  }
+
+  async function uploadReportPhotos(files, reportKey) {
+    const uploaded = [];
+    for (const [index, file] of files.entries()) {
+      const cleanName = safeFileName(file.name || `photo_${index + 1}.jpg`);
+      const path = `report-photos/${appId}/${auth.currentUser.uid}/${reportKey}/${Date.now()}_${index + 1}_${cleanName}`;
+      const fileRef = storageRef(storage, path);
+      const snapshot = await uploadBytes(fileRef, file, {
+        contentType: file.type || 'image/jpeg',
+        customMetadata: {
+          uploadedBy: auth.currentUser.email || '',
+          appId
+        }
+      });
+      const url = await getDownloadURL(snapshot.ref);
+      uploaded.push({
+        name: file.name || cleanName,
+        type: file.type || '',
+        size: file.size || 0,
+        path,
+        url,
+        uploadedAt: new Date().toISOString()
+      });
+    }
+    return uploaded;
+  }
+
+  function renderPhotoLinks(report) {
+    const photos = Array.isArray(report.photos) ? report.photos : [];
+    if (!photos.length) return '';
+    return `
+      <div class="photo-link-list">
+        ${photos.map((photo, index) => `
+          <a class="photo-link" href="${escapeHtml(photo.url || '#')}" target="_blank" rel="noopener">Photo ${index + 1}</a>
+        `).join('')}
+      </div>
+    `;
+  }
+
+
+  // Calculations
+  const runCalcs = () => {
+    const startVal = document.getElementById('startTime')?.value;
+    const finishVal = document.getElementById('finishTime')?.value;
+    const display = document.getElementById('totalHoursDisplay');
+    if (startVal && finishVal && display) {
+      const [sh, sm] = startVal.split(':').map(Number);
+      const [fh, fm] = finishVal.split(':').map(Number);
+      let diff = (fh * 60 + fm) - (sh * 60 + sm);
+      if (diff < 0) diff += 1440;
+      display.textContent = (diff / 60).toFixed(2);
+    }
+  };
+
+  document.getElementById('startTime')?.addEventListener('input', runCalcs);
+  document.getElementById('finishTime')?.addEventListener('input', runCalcs);
+
+
+  document.getElementById('workAreaType')?.addEventListener('change', toggleWorkAreaFields);
+  document.getElementById('liftAreaLength')?.addEventListener('input', updateLiftAreaSqFtDisplay);
+  document.getElementById('liftAreaWidth')?.addEventListener('input', updateLiftAreaSqFtDisplay);
+  document.getElementById('jobPhotos')?.addEventListener('change', renderSelectedPhotoNames);
+  toggleWorkAreaFields();
+  updateLiftAreaSqFtDisplay();
+
+
+  // GPS
+  document.getElementById('btnGPS')?.addEventListener('click', () => {
+    if (!navigator.geolocation) return showMessage("Geolocation not supported", "error");
+    showMessage("Pinning location...", "success");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = document.getElementById('gpsLatitude');
+        const lon = document.getElementById('gpsLongitude');
+        const conf = document.getElementById('locationConfirmed');
+        if (lat) lat.value = pos.coords.latitude.toFixed(6);
+        if (lon) lon.value = pos.coords.longitude.toFixed(6);
+        if (conf) conf.checked = true;
+        showMessage("Location pinned successfully", "success");
+      },
+      () => showMessage("Location access denied. Please enable GPS.", "error"),
+      { enableHighAccuracy: true }
+    );
+  });
+
+  // Road Profile Table Logic
+  const generateProfileRows = () => {
+    const lenInput = document.getElementById('profileLength');
+    const stepInput = document.getElementById('profileInterval');
+    const body = document.getElementById('profileRows');
+    
+    if (!body || !lenInput || !stepInput) return;
+    const len = parseInt(lenInput.value) || 0;
+    let step = parseInt(stepInput.value) || 10;
+    if (step <= 0) step = 10;
+    
+    body.innerHTML = '';
+    for (let i = 0; i <= len; i += step) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="station-cell">${i} ft</td>
+        <td><input type="number" step="0.01" placeholder="Before"></td>
+        <td><input type="number" step="0.01" placeholder="After"></td>
+        <td><input type="number" step="0.01" placeholder="Before"></td>
+        <td><input type="number" step="0.01" placeholder="After"></td>
+      `;
+      body.appendChild(row);
+    }
+  };
+
+  document.getElementById('btnBuildRows')?.addEventListener('click', generateProfileRows);
+  generateProfileRows();
+
+  // --- SUBMISSION ---
+  document.getElementById('crewForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!auth.currentUser) return showMessage("You must be logged in to submit.", "error");
+    if (!document.getElementById('locationConfirmed')?.checked) return showMessage("Please confirm the GPS location.", "error");
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading Report...";
+    }
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    delete data.jobPhotos;
+    data.totalHours = document.getElementById('totalHoursDisplay')?.textContent || "0";
+    data.linearFeet = document.getElementById('profileLength')?.value || data.linearFeet || "";
+    data.profileInterval = document.getElementById('profileInterval')?.value || "";
+    data.workAreaType = data.workAreaType || "";
+    data.workAreaOther = data.workAreaType === "Other" ? (data.workAreaOther || "") : "";
+    data.workAreaDisplay = data.workAreaType === "Other" && data.workAreaOther ? data.workAreaOther : data.workAreaType;
+    data.liftAreaLength = data.liftAreaLength || "";
+    data.liftAreaWidth = data.liftAreaWidth || "";
+    data.liftAreaSqFt = calculateLiftAreaSqFt(data.liftAreaLength, data.liftAreaWidth);
+    data.liftAreaNotes = data.liftAreaNotes || "";
+data.addressLatitude = data.addressLatitude || "";
+data.addressLongitude = data.addressLongitude || "";
+data.googlePlaceId = data.googlePlaceId || "";
+    
+    const aStart = Number(data.aMeterStart || 0);
+    const aFinish = Number(data.aMeterFinish || 0);
+    const bStart = Number(data.bMeterStart || 0);
+    const bFinish = Number(data.bMeterFinish || 0);
+    data.aPounds = Math.max(0, aFinish - aStart);
+    data.bPounds = Math.max(0, bFinish - bStart);
+    data.clicks = Number(data.clicks || 0);
+    data.estimatedPounds = data.clicks * 0.6;
+    data.flowMeterPounds = data.aPounds + data.bPounds;
+    data.differencePounds = data.estimatedPounds - data.flowMeterPounds;
+    data.differencePercent = data.flowMeterPounds > 0 ? (data.differencePounds / data.flowMeterPounds) * 100 : 0;
+    data.totalPounds = data.estimatedPounds;
+    data.poundsPerHour = Number(data.totalHours) > 0 ? data.estimatedPounds / Number(data.totalHours) : 0;
+    
+    const profileData = [];
+    document.querySelectorAll('#profileRows tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input');
+      profileData.push({
+        station: tr.querySelector('.station-cell')?.textContent || "",
+        d1Before: inputs[0]?.value || "",
+        d1After: inputs[1]?.value || "",
+        d2Before: inputs[2]?.value || "",
+        d2After: inputs[3]?.value || ""
+      });
+    });
+    data.profile = profileData;
+
+    const photoFiles = Array.from(document.getElementById('jobPhotos')?.files || []);
+    const reportPhotoKey = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    data.photos = [];
+    data.photoCount = 0;
+
+    data.timestamp = serverTimestamp();
+    data.userId = auth.currentUser.uid;
+    data.submittedBy = auth.currentUser.email;
+    data.approvalStatus = data.approvalStatus || "Needs Review";
+    data.managerNotes = "";
+    data.deleted = false;
+    data.auditTrail = [{
+      action: "Created",
+      by: auth.currentUser.email,
+      at: new Date().toISOString(),
+      note: "Report submitted from field form."
+    }];
+
+    try {
+      if (photoFiles.length) {
+        showMessage(`Uploading ${photoFiles.length} photo${photoFiles.length === 1 ? '' : 's'}...`, "success");
+        data.photos = await uploadReportPhotos(photoFiles, reportPhotoKey);
+        data.photoCount = data.photos.length;
+      }
+
+      const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
+      await addDoc(collRef, data);
+      
+      showMessage("Report saved to cloud successfully!");
+      clearLocalDraft();
+      e.target.reset();
+      if (dateInput) dateInput.valueAsDate = new Date();
+      const aStartInput = document.getElementById('aMeterStart');
+      const bStartInput = document.getElementById('bMeterStart');
+      if (aStartInput) aStartInput.value = 0;
+      if (bStartInput) bStartInput.value = 0;
+      generateProfileRows();
+      const hrs = document.getElementById('totalHoursDisplay');
+      if (hrs) hrs.textContent = "—";
+      toggleWorkAreaFields();
+      updateLiftAreaSqFtDisplay();
+      renderSelectedPhotoNames();
+      switchTab('history');
+    } catch (err) {
+      console.error(err);
+      showMessage("Error saving to cloud. Ensure internet connection and Firebase permissions.", "error");
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Save & Submit Report";
+      }
+    }
+  });
+
+  function statusClass(status) {
+    if (status === 'Approved') return 'status-approved';
+    if (status === 'Rejected') return 'status-rejected';
+    if (status === 'Needs Revision') return 'status-revision';
+    return 'status-review';
+  }
+
+  function activeReportsOnly(docs) {
+    return docs.filter(report => report.deleted !== true);
+  }
+
+  function populateHistoryFilters(docs) {
+    const activeDocs = activeReportsOnly(docs);
+    const citySelect = document.getElementById('historyCityFilter');
+    const truckSelect = document.getElementById('historyTruckFilter');
+    if (!citySelect || !truckSelect) return;
+
+    const currentCity = citySelect.value;
+    const currentTruck = truckSelect.value;
+    const cities = [...new Set(activeDocs.map(d => d.city).filter(Boolean))].sort();
+    const trucks = [...new Set(activeDocs.map(d => d.truckNumber).filter(Boolean))].sort();
+
+    citySelect.innerHTML = '<option value="">All Cities</option>' + cities.map(city => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`).join('');
+    truckSelect.innerHTML = '<option value="">All Trucks</option>' + trucks.map(truck => `<option value="${escapeHtml(truck)}">${escapeHtml(truck)}</option>`).join('');
+
+    if (cities.includes(currentCity)) citySelect.value = currentCity;
+    if (trucks.includes(currentTruck)) truckSelect.value = currentTruck;
+  }
+
+  function getFilteredReports() {
+    const search = String(document.getElementById('historySearch')?.value || '').toLowerCase().trim();
+    const city = document.getElementById('historyCityFilter')?.value || '';
+    const truck = document.getElementById('historyTruckFilter')?.value || '';
+    const status = document.getElementById('historyStatusFilter')?.value || '';
+
+    return allReports.filter(report => {
+      const isDeleted = report.deleted === true;
+      const approvalStatus = report.approvalStatus || 'Needs Review';
+
+      if (status === 'Deleted') {
+        if (!isDeleted) return false;
+      } else if (status === 'all') {
+        // Include everything.
+      } else {
+        if (isDeleted) return false;
+        if (status && approvalStatus !== status) return false;
+      }
+
+      if (city && report.city !== city) return false;
+      if (truck && report.truckNumber !== truck) return false;
+
+      if (search) {
+        const haystack = [
+          report.city,
+          report.truckNumber,
+          report.crewLead,
+          report.address,
+          report.date,
+          report.submittedBy,
+          report.notes,
+          report.managerNotes,
+          report.approvalStatus,
+          report.workAreaType,
+          report.workAreaOther,
+          report.workAreaDisplay,
+          report.liftAreaNotes
+        ].join(' ').toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (!list) return;
+
+    const docs = getFilteredReports();
+    if (!docs.length) {
+      list.innerHTML = `<p style="color:var(--gray); text-align:center; padding:20px;">No matching reports found.</p>`;
+      return;
+    }
+
+    list.innerHTML = docs.map(report => {
+      const pounds = getReportPounds(report);
+      const hours = getReportHours(report);
+      const lbsPerHour = hours > 0 ? pounds / hours : 0;
+      const status = report.approvalStatus || 'Needs Review';
+      const deletedLabel = report.deleted === true ? `<span class="status-pill status-rejected">Deleted</span>` : '';
+      const statusPill = `<span class="status-pill ${statusClass(status)}">${escapeHtml(status)}</span>`;
+      const managerActions = isCurrentUserManager ? `
+        <div class="history-actions">
+          ${report.deleted === true ? `
+            <button class="btn btn-success small-btn" type="button" onclick="restoreReport('${report.id}')">Restore</button>
+            <button class="btn btn-danger small-btn" type="button" onclick="permanentlyDeleteReport('${report.id}')">Permanent Delete</button>
+          ` : `
+            <button class="btn btn-success small-btn" type="button" onclick="reviewReport('${report.id}', 'Approved')">Approve</button>
+            <button class="btn btn-warning small-btn" type="button" onclick="reviewReport('${report.id}', 'Needs Revision')">Needs Revision</button>
+            <button class="btn btn-danger small-btn" type="button" onclick="reviewReport('${report.id}', 'Rejected')">Reject</button>
+            <button class="btn btn-outline small-btn" type="button" onclick="openEditReport('${report.id}')">Edit</button>
+            <button class="btn btn-outline small-btn" type="button" onclick="printReport('${report.id}')">PDF / Print</button>
+            <button class="btn btn-danger small-btn" type="button" onclick="softDeleteReport('${report.id}')">Delete</button>
+          `}
+        </div>
+      ` : '';
+
+      return `
+        <div class="history-item">
+          <div style="flex:1;">
+            <div style="font-weight:900; color:var(--kke-blue); font-size:16px;">
+              ${escapeHtml(report.city || 'Unknown City')} - ${escapeHtml(report.address || 'No Address')}
+              ${statusPill}${deletedLabel}
+            </div>
+            <div style="font-size:13px; color:var(--gray); margin-top:2px;">
+              ${escapeHtml(report.date || 'No Date')} | Lead: ${escapeHtml(report.crewLead || 'None')} | Truck: ${escapeHtml(report.truckNumber || 'N/A')}
+            </div>
+            <div style="font-size:12px; color:#374151; margin-top:6px;">
+              <strong>Area:</strong> ${escapeHtml(getWorkAreaDisplay(report))}
+              ${Number(report.liftAreaSqFt || 0) > 0 ? ` | <strong>Dimensions:</strong> ${escapeHtml(report.liftAreaLength || '')}' x ${escapeHtml(report.liftAreaWidth || '')}' (${fmtNumber(report.liftAreaSqFt, 2)} sq ft)` : ''}
+              ${report.photoCount ? ` | <strong>Photos:</strong> ${fmtNumber(report.photoCount, 0)}` : ''}
+            </div>
+            ${report.liftAreaNotes ? `<div style="font-size:12px; margin-top:5px; color:#374151;"><strong>Area Notes:</strong> ${escapeHtml(report.liftAreaNotes)}</div>` : ''}
+            ${renderPhotoLinks(report)}
+            ${report.managerNotes ? `<div style="font-size:12px; margin-top:6px; color:#374151;"><strong>Manager Notes:</strong> ${escapeHtml(report.managerNotes)}</div>` : ''}
+            ${managerActions}
+          </div>
+          <div style="text-align:right; min-width:150px;">
+            <div style="font-weight:700; font-size:18px;">${fmtNumber(pounds, 0)} lbs</div>
+            <div style="font-size:12px; color:var(--gray);">${fmtNumber(hours, 2)} hrs | ${fmtNumber(lbsPerHour, 0)} lbs/hr</div>
+            <div style="font-size:11px; color:var(--gray)">By: ${escapeHtml(report.submittedBy || 'N/A')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function loadHistory() {
+    if (!auth.currentUser) return;
+    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
+
+    historyUnsubscribe = onSnapshot(collRef, (snapshot) => {
+      allReports = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      allReports.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      populateHistoryFilters(allReports);
+      renderHistory();
+    }, (err) => {
+      console.error(err);
+      const list = document.getElementById('historyList');
+      if (list) list.innerHTML = 'Error loading history.';
+    });
+  }
+
+
+
+  function parseDateTimeMinutes(report, timeField) {
+    const date = report.date;
+    const time = report[timeField];
+    if (!date || !time || !/^\d{2}:\d{2}$/.test(String(time))) return null;
+    const [year, month, day] = String(date).split('-').map(Number);
+    const [hour, minute] = String(time).split(':').map(Number);
+    if (![year, month, day, hour, minute].every(Number.isFinite)) return null;
+    return new Date(year, month - 1, day, hour, minute).getTime();
+  }
+
+  function getGpsPoint(report) {
+    const lat = Number(report.gpsLatitude);
+    const lon = Number(report.gpsLongitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (lat === 0 && lon === 0) return null;
+    return { lat, lon };
+  }
+
+  function haversineMiles(a, b) {
+    if (!a || !b) return 0;
+    const radiusMiles = 3958.7613;
+    const toRad = degrees => degrees * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 2 * radiusMiles * Math.asin(Math.sqrt(h));
+  }
+
+  function calculateTransitions(reports) {
+    const byTruckDate = {};
+    activeReportsOnly(reports).forEach(report => {
+      const truck = report.truckNumber || 'Unknown Truck';
+      const date = report.date || '';
+      const startMs = parseDateTimeMinutes(report, 'startTime');
+      const finishMs = parseDateTimeMinutes(report, 'finishTime');
+      if (!truck || !date || startMs === null || finishMs === null) return;
+      const key = `${truck}__${date}`;
+      if (!byTruckDate[key]) byTruckDate[key] = [];
+      byTruckDate[key].push({ ...report, startMs, finishMs });
+    });
+
+    const transitions = [];
+    Object.values(byTruckDate).forEach(items => {
+      items.sort((a, b) => a.startMs - b.startMs);
+      for (let i = 0; i < items.length - 1; i++) {
+        const previous = items[i];
+        const next = items[i + 1];
+        const minutes = (next.startMs - previous.finishMs) / 60000;
+        if (!Number.isFinite(minutes) || minutes < 0 || minutes > 480) continue;
+        const prevPoint = getGpsPoint(previous);
+        const nextPoint = getGpsPoint(next);
+        const miles = haversineMiles(prevPoint, nextPoint);
+        const mph = minutes > 0 && miles > 0 ? miles / (minutes / 60) : 0;
+        transitions.push({
+          truck: previous.truckNumber || 'Unknown Truck',
+          date: previous.date || '',
+          crewLead: next.crewLead || previous.crewLead || 'Unknown Crew',
+          fromCity: previous.city || 'Unknown City',
+          toCity: next.city || 'Unknown City',
+          fromAddress: previous.address || 'Previous job',
+          toAddress: next.address || 'Next job',
+          minutes,
+          miles,
+          mph,
+          hasGps: Boolean(prevPoint && nextPoint)
+        });
+      }
+    });
+    return transitions;
+  }
+
+  function renderTransitionTable(transitions) {
+    if (!transitions.length) return `<div class="empty-state">No transition data yet. This appears after a truck submits at least two same-day jobs with start and finish times.</div>`;
+    const top = transitions.slice().sort((a, b) => b.minutes - a.minutes).slice(0, 12);
+    return `
+      <div class="transition-row header-row">
+        <div>Truck / Date</div><div>Transition</div><div>GPS Miles</div><div>MPH</div><div>Route</div>
+      </div>
+      ${top.map(item => `
+        <div class="transition-row">
+          <div><strong style="color:var(--kke-blue);">${escapeHtml(item.truck)}</strong><br><span style="color:var(--gray);">${escapeHtml(item.date)} | ${escapeHtml(item.crewLead)}</span></div>
+          <div><strong>${fmtNumber(item.minutes, 0)} min</strong></div>
+          <div>${item.hasGps ? `${fmtNumber(item.miles, 1)} mi` : 'No GPS'}</div>
+          <div>${item.hasGps && item.mph > 0 ? `${fmtNumber(item.mph, 0)} mph` : '—'}</div>
+          <div>${escapeHtml(item.fromCity)} → ${escapeHtml(item.toCity)}<br><span style="color:var(--gray);">${escapeHtml(item.fromAddress)} → ${escapeHtml(item.toAddress)}</span></div>
+        </div>
+      `).join('')}
+    `;
+  }
+
+
+  function groupTransitionByTruck(transitions) {
+    const byTruck = {};
+    transitions.forEach(item => {
+      const truck = item.truck || 'Unknown Truck';
+      if (!byTruck[truck]) byTruck[truck] = { truck, count: 0, totalMinutes: 0, gpsCount: 0, totalMiles: 0, longest: 0 };
+      byTruck[truck].count += 1;
+      byTruck[truck].totalMinutes += item.minutes || 0;
+      byTruck[truck].longest = Math.max(byTruck[truck].longest, item.minutes || 0);
+      if (item.hasGps) {
+        byTruck[truck].gpsCount += 1;
+        byTruck[truck].totalMiles += item.miles || 0;
+      }
+    });
+    return Object.values(byTruck).map(item => ({
+      ...item,
+      avgMinutes: item.count ? item.totalMinutes / item.count : 0,
+      avgMiles: item.gpsCount ? item.totalMiles / item.gpsCount : 0
+    }));
+  }
+
+  function renderMetricBars(entries, valueKey, suffix, colors, decimals = 0) {
+    const clean = entries.filter(item => Number.isFinite(item[valueKey]) && item[valueKey] > 0);
+    if (!clean.length) return `<div class="empty-state">No data yet.</div>`;
+    const max = Math.max(...clean.map(item => item[valueKey]), 1);
+    return clean.sort((a, b) => b[valueKey] - a[valueKey]).map(item => {
+      const label = item.truck || item.name || 'Unknown';
+      const color = colors[label] || '#0057a8';
+      const pct = Math.max(4, (item[valueKey] / max) * 100);
+      return `
+        <div class="metric-bar-row">
+          <div><strong>${escapeHtml(label)}</strong></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+          <div style="text-align:right; font-weight:900; color:var(--kke-dark-blue);">${fmtNumber(item[valueKey], decimals)} ${suffix}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderLongestTransitions(transitions) {
+    if (!transitions.length) return `<div class="empty-state">No transition data yet.</div>`;
+    return transitions.slice().sort((a, b) => b.minutes - a.minutes).slice(0, 5).map(item => `
+      <div class="transition-route-card">
+        <div class="transition-route-title">Truck ${escapeHtml(item.truck)} — ${fmtNumber(item.minutes, 0)} min</div>
+        <div class="transition-route-meta">${escapeHtml(item.date)} | ${escapeHtml(item.fromCity)} → ${escapeHtml(item.toCity)}${item.hasGps ? ` | ${fmtNumber(item.miles, 1)} mi` : ' | no GPS distance'}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderRecentTransitionRoutes(transitions) {
+    if (!transitions.length) return `<div class="empty-state">No route data yet.</div>`;
+    return transitions.slice().sort((a, b) => `${b.date}`.localeCompare(`${a.date}`)).slice(0, 5).map(item => `
+      <div class="transition-route-card">
+        <div class="transition-route-title">${escapeHtml(item.fromCity)} → ${escapeHtml(item.toCity)}</div>
+        <div class="transition-route-meta">Truck ${escapeHtml(item.truck)} | ${escapeHtml(item.date)} | ${fmtNumber(item.minutes, 0)} min${item.hasGps ? ` | ${fmtNumber(item.miles, 1)} mi | ${fmtNumber(item.mph, 0)} mph` : ' | no GPS distance'}</div>
+      </div>
+    `).join('');
+  }
+
+  function buildTransitionStats(transitions) {
+    const gpsTransitions = transitions.filter(item => item.hasGps);
+    const totalMinutes = transitions.reduce((sum, item) => sum + item.minutes, 0);
+    const totalMiles = gpsTransitions.reduce((sum, item) => sum + item.miles, 0);
+    const avgMinutes = transitions.length ? totalMinutes / transitions.length : 0;
+    const avgMiles = gpsTransitions.length ? totalMiles / gpsTransitions.length : 0;
+    const avgMph = totalMinutes > 0 && totalMiles > 0 ? totalMiles / (totalMinutes / 60) : 0;
+    const longest = transitions.length ? Math.max(...transitions.map(item => item.minutes)) : 0;
+    return { avgMinutes, avgMiles, avgMph, longest };
+  }
+
+  function renderTrendChart(docs) {
+    const byDate = {};
+    activeReportsOnly(docs).forEach(report => {
+      if (!report.date) return;
+      byDate[report.date] = (byDate[report.date] || 0) + getReportPounds(report);
+    });
+
+    const entries = Object.entries(byDate)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-7)
+      .map(([date, pounds]) => ({ date, pounds }));
+
+    if (!entries.length) return `<div class="empty-state">No trend data yet.</div>`;
+
+    const max = Math.max(...entries.map(item => item.pounds), 1);
+    return `<div class="trend-grid">${entries.map(item => {
+      const height = Math.max(4, (item.pounds / max) * 140);
+      const label = item.date.slice(5);
+      return `
+        <div class="trend-bar-wrap">
+          <div class="trend-value">${fmtNumber(item.pounds, 0)}</div>
+          <div class="trend-bar" style="height:${height}px"></div>
+          <div class="trend-label">${escapeHtml(label)}</div>
+        </div>
+      `;
+    }).join('')}</div>`;
+  }
+
+  function renderDashboardFromReports(allActiveDocs) {
+    const docs = filterReportsByDashboardRange(allActiveDocs, dashboardRange);
+    const transitions = calculateTransitions(docs);
+    const transitionStats = buildTransitionStats(transitions);
+
+    let totalClicks = 0;
+    let totalPounds = 0;
+    let totalFlowMeterPounds = 0;
+    let totalDifferencePounds = 0;
+    const byCity = {};
+    const byTruck = {};
+    const byArea = {};
+    const truckStats = {};
+    const crewStats = {};
+    const flags = [];
+
+    docs.forEach(report => {
+      const comparison = getPoundComparison(report);
+      const pounds = comparison.estimatedPounds;
+      const hours = getReportHours(report);
+      const city = report.city || 'Unknown City';
+      const truck = report.truckNumber || 'Unknown Truck';
+      const crew = report.crewLead || 'Unknown Crew';
+
+      totalClicks += comparison.clicks;
+      totalPounds += pounds;
+      totalFlowMeterPounds += comparison.flowMeterPounds;
+      totalDifferencePounds += comparison.differencePounds;
+      byCity[city] = (byCity[city] || 0) + pounds;
+      byTruck[truck] = (byTruck[truck] || 0) + pounds;
+      const workArea = getWorkAreaDisplay(report);
+      byArea[workArea] = (byArea[workArea] || 0) + pounds;
+
+      if (!truckStats[truck]) truckStats[truck] = { name: truck, pounds: 0, hours: 0, reports: 0 };
+      truckStats[truck].pounds += pounds;
+      truckStats[truck].hours += hours;
+      truckStats[truck].reports += 1;
+
+      if (!crewStats[crew]) crewStats[crew] = { name: crew, pounds: 0, hours: 0, reports: 0 };
+      crewStats[crew].pounds += pounds;
+      crewStats[crew].hours += hours;
+      crewStats[crew].reports += 1;
+
+      const reportName = `${report.date || 'No Date'} | ${report.city || 'Unknown City'} | ${report.crewLead || 'No Lead'}`;
+      if ((report.approvalStatus || 'Needs Review') === 'Needs Review') flags.push(`${reportName}: waiting for manager approval.`);
+      if ((report.approvalStatus || 'Needs Review') === 'Needs Revision') flags.push(`${reportName}: returned to crew / needs revision.`);
+      if (hours <= 0) flags.push(`${reportName}: missing or zero hours.`);
+      if (comparison.clicks <= 0) flags.push(`${reportName}: missing or zero clicks.`);
+      if (Number(report.aMeterFinish || 0) < Number(report.aMeterStart || 0)) flags.push(`${reportName}: A finish is lower than A start.`);
+      if (Number(report.bMeterFinish || 0) < Number(report.bMeterStart || 0)) flags.push(`${reportName}: B finish is lower than B start.`);
+      if (!report.gpsLatitude || !report.gpsLongitude) flags.push(`${reportName}: missing GPS data.`);
+      if (hours > 0 && pounds / hours > 10000) flags.push(`${reportName}: unusually high estimated pounds per hour.`);
+    });
+
+    const truckEntries = Object.values(truckStats)
+      .map(item => ({ ...item, poundsPerHour: item.hours > 0 ? item.pounds / item.hours : 0 }))
+      .sort((a, b) => b.poundsPerHour - a.poundsPerHour);
+
+    const crewEntries = Object.values(crewStats)
+      .map(item => ({ ...item, poundsPerHour: item.hours > 0 ? item.pounds / item.hours : 0 }))
+      .sort((a, b) => b.poundsPerHour - a.poundsPerHour);
+
+    const bestTruck = truckEntries[0];
+    const bestCrew = crewEntries[0];
+
+    updatePeriodMetricCards(allActiveDocs);
+    updateDashboardRangeButtons();
+
+    const totalDifferencePercent = totalFlowMeterPounds > 0 ? (totalDifferencePounds / totalFlowMeterPounds) * 100 : 0;
+    setText('dashTotalClicks', fmtNumber(totalClicks, 0));
+    setText('dashEstimatedLbs', fmtNumber(totalPounds, 0));
+    setText('dashFlowMeterLbs', fmtNumber(totalFlowMeterPounds, 0));
+    setText('dashDifferencePercent', `${fmtNumber(totalDifferencePercent, 1)}%`);
+    setText('dashDifferenceLbs', fmtNumber(totalDifferencePounds, 0));
+    setText('dashBestTruck', bestTruck ? `${bestTruck.name}: ${fmtNumber(bestTruck.poundsPerHour, 0)}` : '—');
+    setText('dashBestCrew', bestCrew ? `${bestCrew.name}: ${fmtNumber(bestCrew.poundsPerHour, 0)}` : '—');
+
+    const transitionTruckStats = groupTransitionByTruck(transitions);
+    const avgTransitionText = `${fmtNumber(transitionStats.avgMinutes, 0)} min`;
+    const longestTransitionText = `${fmtNumber(transitionStats.longest, 0)} min`;
+    setText('dashAvgTransition', avgTransitionText);
+    setText('dashAvgTransitionMiles', fmtNumber(transitionStats.avgMiles, 1));
+    setText('dashAvgTravelMph', fmtNumber(transitionStats.avgMph, 0));
+    setText('dashLongestTransition', longestTransitionText);
+    setText('dashAvgTransitionHero', avgTransitionText);
+    setText('dashAvgTransitionMilesHero', fmtNumber(transitionStats.avgMiles, 1));
+    setText('dashAvgTravelMphHero', fmtNumber(transitionStats.avgMph, 0));
+    setText('dashLongestTransitionHero', longestTransitionText);
+    setText('dashTransitionSummaryText', transitions.length
+      ? `${fmtNumber(transitions.length, 0)} same-day job-to-job transitions found in ${getDashboardRange(dashboardRange).label}. Lower minutes means tighter dispatch and less downtime.`
+      : `Waiting for at least two same-day jobs from the same truck in ${getDashboardRange(dashboardRange).label}.`);
+
+    const transitionAlert = document.getElementById('transitionAlert');
+    if (transitionAlert) {
+      if (transitionStats.avgMinutes >= 90) {
+        transitionAlert.style.display = 'block';
+        transitionAlert.textContent = `Dispatch warning: average transition time is ${avgTransitionText} for ${getDashboardRange(dashboardRange).label}. Review routing, job sequencing, or load-out delays.`;
+      } else if (transitions.length) {
+        transitionAlert.style.display = 'block';
+        transitionAlert.textContent = `Dispatch read: average transition time is ${avgTransitionText} for ${getDashboardRange(dashboardRange).label}. Use the truck chart below to spot lost time between jobs.`;
+      } else {
+        transitionAlert.style.display = 'none';
+        transitionAlert.textContent = '';
+      }
+    }
+
+    const transitionTruckChart = document.getElementById('transitionTruckChart');
+    if (transitionTruckChart) transitionTruckChart.innerHTML = renderMetricBars(transitionTruckStats, 'avgMinutes', 'min', TRUCK_COLORS, 0);
+    const transitionMilesChart = document.getElementById('transitionMilesChart');
+    if (transitionMilesChart) transitionMilesChart.innerHTML = renderMetricBars(transitionTruckStats, 'avgMiles', 'mi', TRUCK_COLORS, 1);
+    const transitionLongestList = document.getElementById('transitionLongestList');
+    if (transitionLongestList) transitionLongestList.innerHTML = renderLongestTransitions(transitions);
+    const transitionRecentRoutes = document.getElementById('transitionRecentRoutes');
+    if (transitionRecentRoutes) transitionRecentRoutes.innerHTML = renderRecentTransitionRoutes(transitions);
+    const transitionMetrics = document.getElementById('transitionMetrics');
+    if (transitionMetrics) transitionMetrics.innerHTML = renderTransitionTable(transitions);
+
+    const cityMetrics = document.getElementById('cityMetrics');
+    if (cityMetrics) cityMetrics.innerHTML = renderBarChart(byCity, 'lbs', CITY_COLORS);
+    const truckMetrics = document.getElementById('truckMetrics');
+    if (truckMetrics) truckMetrics.innerHTML = renderBarChart(byTruck, 'lbs', TRUCK_COLORS);
+    const workAreaBox = document.getElementById('workAreaMetrics');
+    if (workAreaBox) workAreaBox.innerHTML = renderBarChart(byArea, 'lbs', {}, 'value');
+
+    const truckEfficiencyObject = {};
+    truckEntries.forEach(item => { truckEfficiencyObject[item.name] = item.poundsPerHour; });
+    const truckEfficiencyMetrics = document.getElementById('truckEfficiencyMetrics');
+    if (truckEfficiencyMetrics) truckEfficiencyMetrics.innerHTML = renderBarChart(truckEfficiencyObject, 'lbs/hr', TRUCK_COLORS);
+
+    const crewMetrics = document.getElementById('crewMetrics');
+    if (crewMetrics) {
+      crewMetrics.innerHTML = buildLeaderboard(
+        crewEntries,
+        'poundsPerHour',
+        'lbs/hr',
+        crew => `${fmtNumber(crew.pounds, 0)} lbs | ${fmtNumber(crew.hours, 2)} hrs | ${fmtNumber(crew.reports, 0)} reports`
+      );
+    }
+
+    const trendBox = document.getElementById('trendMetrics');
+    if (trendBox) trendBox.innerHTML = renderTrendChart(docs);
+
+    const flaggedReports = document.getElementById('flaggedReports');
+    if (flaggedReports) {
+      flaggedReports.innerHTML = flags.length ? flags.slice(0, 30).map(flag => `
+        <div class="flag-item">${escapeHtml(flag)}</div>
+      `).join('') : `<div class="empty-state">No flagged reports in ${escapeHtml(getDashboardRange(dashboardRange).label)}.</div>`;
+    }
+  }
+
+  function loadDashboard() {
+    if (!auth.currentUser || !isCurrentUserManager) return;
+    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
+
+    dashboardUnsubscribe = onSnapshot(collRef, (snapshot) => {
+      latestDashboardReports = activeReportsOnly(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      renderDashboardFromReports(latestDashboardReports);
+    }, (err) => {
+      console.error(err);
+      showMessage('Error loading dashboard. Check manager access and Firebase rules.', 'error');
+    });
+  }
+
+  function makeAuditEntry(action, note = '') {
+    return {
+      action,
+      note,
+      by: auth.currentUser?.email || 'unknown',
+      at: new Date().toISOString()
+    };
+  }
+
+  function reportRef(reportId) {
+    return firestoreDoc(db, 'artifacts', appId, 'public', 'data', 'submissions', reportId);
+  }
+
+  window.reviewReport = async function(reportId, status) {
+    if (!isCurrentUserManager) return showMessage('Manager access required.', 'error');
+
+    const allowedStatuses = ['Approved', 'Needs Revision', 'Rejected', 'Needs Review'];
+    if (!allowedStatuses.includes(status)) return showMessage('Invalid review status.', 'error');
+
+    const report = allReports.find(item => item.id === reportId);
+    if (!report) return showMessage('Report not found.', 'error');
+
+    let note = '';
+    if (status === 'Needs Revision' || status === 'Rejected') {
+      note = prompt(`Add a manager note for ${status}:`, report.managerNotes || '') || '';
+    }
+
+    try {
+      await updateDoc(reportRef(reportId), {
+        approvalStatus: status,
+        managerNotes: note || report.managerNotes || '',
+        reviewedBy: auth.currentUser.email,
+        reviewedAt: serverTimestamp(),
+        lastModifiedBy: auth.currentUser.email,
+        lastModifiedAt: serverTimestamp(),
+        auditTrail: arrayUnion(makeAuditEntry('Review Status Updated', `Status changed to ${status}${note ? ': ' + note : '.'}`))
+      });
+      showMessage(`Report marked as ${status}.`);
+    } catch (err) {
+      console.error(err);
+      showMessage('Review update failed. Check Firebase manager permissions.', 'error');
+    }
+  };
+
+  function recalcReportFields(patch) {
+    const aStart = Number(patch.aMeterStart || 0);
+    const aFinish = Number(patch.aMeterFinish || 0);
+    const bStart = Number(patch.bMeterStart || 0);
+    const bFinish = Number(patch.bMeterFinish || 0);
+    patch.aPounds = Math.max(0, aFinish - aStart);
+    patch.bPounds = Math.max(0, bFinish - bStart);
+    patch.clicks = Number(patch.clicks || 0);
+    patch.estimatedPounds = patch.clicks * 0.6;
+    patch.flowMeterPounds = patch.aPounds + patch.bPounds;
+    patch.differencePounds = patch.estimatedPounds - patch.flowMeterPounds;
+    patch.differencePercent = patch.flowMeterPounds > 0 ? (patch.differencePounds / patch.flowMeterPounds) * 100 : 0;
+    patch.totalPounds = patch.estimatedPounds;
+    patch.poundsPerHour = Number(patch.totalHours || 0) > 0 ? patch.estimatedPounds / Number(patch.totalHours || 0) : 0;
+    patch.workAreaOther = patch.workAreaType === 'Other' ? (patch.workAreaOther || '') : '';
+    patch.workAreaDisplay = patch.workAreaType === 'Other' && patch.workAreaOther ? patch.workAreaOther : (patch.workAreaType || '');
+    patch.liftAreaSqFt = calculateLiftAreaSqFt(patch.liftAreaLength, patch.liftAreaWidth);
+    return patch;
+  }
+
+  function renderAuditTrail(report) {
+    const box = document.getElementById('auditTrailBox');
+    if (!box) return;
+    const entries = Array.isArray(report.auditTrail) ? report.auditTrail.slice().reverse() : [];
+    if (!entries.length) {
+      box.innerHTML = 'No audit entries yet.';
+      return;
+    }
+    box.innerHTML = entries.map(entry => `
+      <div class="audit-line">
+        <strong>${escapeHtml(entry.action || 'Update')}</strong>
+        <div>${escapeHtml(entry.note || '')}</div>
+        <div style="color:var(--gray); margin-top:2px;">${escapeHtml(entry.by || 'unknown')} | ${escapeHtml(entry.at || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  window.openEditReport = function(reportId) {
+    if (!isCurrentUserManager) return showMessage('Manager access required.', 'error');
+    const report = allReports.find(item => item.id === reportId);
+    if (!report) return showMessage('Report not found.', 'error');
+
+    currentEditReport = report;
+    document.getElementById('editDocId').value = report.id;
+    document.getElementById('editModalSub').textContent = `${report.date || 'No Date'} | ${report.city || 'Unknown City'} | ${report.address || 'No Address'}`;
+    document.getElementById('editDate').value = report.date || '';
+    document.getElementById('editCity').value = report.city || '';
+    document.getElementById('editTruckNumber').value = report.truckNumber || '';
+    document.getElementById('editCrewLead').value = report.crewLead || '';
+    document.getElementById('editAddress').value = report.address || '';
+    document.getElementById('editWorkAreaType').value = report.workAreaType || '';
+    document.getElementById('editWorkAreaOther').value = report.workAreaOther || '';
+    document.getElementById('editLiftAreaLength').value = report.liftAreaLength || '';
+    document.getElementById('editLiftAreaWidth').value = report.liftAreaWidth || '';
+    document.getElementById('editLiftAreaNotes').value = report.liftAreaNotes || '';
+    const editPhotoLinks = document.getElementById('editPhotoLinks');
+    if (editPhotoLinks) editPhotoLinks.innerHTML = renderPhotoLinks(report) || '<div class="empty-state">No photos attached.</div>';
+    document.getElementById('editAMeterStart').value = report.aMeterStart || '';
+    document.getElementById('editAMeterFinish').value = report.aMeterFinish || '';
+    document.getElementById('editBMeterStart').value = report.bMeterStart || '';
+    document.getElementById('editBMeterFinish').value = report.bMeterFinish || '';
+    document.getElementById('editClicks').value = report.clicks || '';
+    document.getElementById('editTotalHours').value = getReportHours(report) || '';
+    document.getElementById('editLinearFeet').value = report.linearFeet || '';
+    document.getElementById('editGpsLatitude').value = report.gpsLatitude || '';
+    document.getElementById('editGpsLongitude').value = report.gpsLongitude || '';
+    document.getElementById('editApprovalStatus').value = report.approvalStatus || 'Needs Review';
+    document.getElementById('editManagerInitials').value = '';
+    document.getElementById('editNotes').value = report.notes || '';
+    document.getElementById('editManagerNotes').value = report.managerNotes || '';
+    renderAuditTrail(report);
+    document.getElementById('editModal').style.display = 'flex';
+  };
+
+  function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditReport = null;
+  }
+
+  async function saveEditedReport() {
+    if (!isCurrentUserManager || !currentEditReport) return showMessage('Manager access required.', 'error');
+    const docId = document.getElementById('editDocId').value;
+    const patch = recalcReportFields({
+      date: document.getElementById('editDate').value,
+      city: document.getElementById('editCity').value.trim(),
+      truckNumber: document.getElementById('editTruckNumber').value.trim(),
+      crewLead: document.getElementById('editCrewLead').value.trim(),
+      address: document.getElementById('editAddress').value.trim(),
+      workAreaType: document.getElementById('editWorkAreaType').value,
+      workAreaOther: document.getElementById('editWorkAreaOther').value.trim(),
+      liftAreaLength: document.getElementById('editLiftAreaLength').value,
+      liftAreaWidth: document.getElementById('editLiftAreaWidth').value,
+      liftAreaNotes: document.getElementById('editLiftAreaNotes').value.trim(),
+      aMeterStart: document.getElementById('editAMeterStart').value,
+      aMeterFinish: document.getElementById('editAMeterFinish').value,
+      bMeterStart: document.getElementById('editBMeterStart').value,
+      bMeterFinish: document.getElementById('editBMeterFinish').value,
+      clicks: document.getElementById('editClicks').value,
+      totalHours: document.getElementById('editTotalHours').value,
+      linearFeet: document.getElementById('editLinearFeet').value,
+      gpsLatitude: document.getElementById('editGpsLatitude').value,
+      gpsLongitude: document.getElementById('editGpsLongitude').value,
+      approvalStatus: document.getElementById('editApprovalStatus').value,
+      managerNotes: document.getElementById('editManagerNotes').value.trim(),
+      notes: document.getElementById('editNotes').value.trim(),
+      lastModifiedAt: serverTimestamp(),
+      lastModifiedBy: auth.currentUser.email
+    });
+
+    const initials = document.getElementById('editManagerInitials').value.trim();
+    const auditNote = initials ? `Edited by manager initials: ${initials}` : 'Manager edited report fields.';
+
+    try {
+      await updateDoc(reportRef(docId), {
+        ...patch,
+        auditTrail: arrayUnion(makeAuditEntry('Manager Edit', auditNote))
+      });
+      closeEditModal();
+      showMessage('Report updated successfully.');
+    } catch (err) {
+      console.error(err);
+      showMessage('Update failed. Check Firebase manager permissions.', 'error');
+    }
+  }
+
+  window.softDeleteReport = async function(reportId) {
+    if (!isCurrentUserManager) return showMessage('Manager access required.', 'error');
+    const report = allReports.find(item => item.id === reportId);
+    const label = report ? `${report.date || ''} ${report.city || ''} ${report.address || ''}` : reportId;
+    const typed = prompt(`Type DELETE to move this report to recovery:\n${label}`);
+    if (typed !== 'DELETE') return;
+
+    try {
+      await updateDoc(reportRef(reportId), {
+        deleted: true,
+        deletedAt: serverTimestamp(),
+        deletedBy: auth.currentUser.email,
+        auditTrail: arrayUnion(makeAuditEntry('Soft Delete', 'Moved to deleted report recovery.'))
+      });
+      showMessage('Report moved to recovery.');
+    } catch (err) {
+      console.error(err);
+      showMessage('Delete failed. Check Firebase manager permissions.', 'error');
+    }
+  };
+
+  window.restoreReport = async function(reportId) {
+    if (!isCurrentUserManager) return showMessage('Manager access required.', 'error');
+    try {
+      await updateDoc(reportRef(reportId), {
+        deleted: false,
+        restoredAt: serverTimestamp(),
+        restoredBy: auth.currentUser.email,
+        auditTrail: arrayUnion(makeAuditEntry('Restored', 'Recovered from deleted reports.'))
+      });
+      showMessage('Report restored successfully.');
+    } catch (err) {
+      console.error(err);
+      showMessage('Restore failed. Check Firebase manager permissions.', 'error');
+    }
+  };
+
+  window.permanentlyDeleteReport = async function(reportId) {
+    if (!isCurrentUserManager) return showMessage('Manager access required.', 'error');
+    const typed = prompt('Permanent delete cannot be recovered. Type PERMANENT DELETE to continue.');
+    if (typed !== 'PERMANENT DELETE') return;
+    try {
+      await deleteDoc(reportRef(reportId));
+      showMessage('Report permanently deleted.');
+    } catch (err) {
+      console.error(err);
+      showMessage('Permanent delete failed. Check Firebase manager permissions.', 'error');
+    }
+  };
+
+  window.printReport = function(reportId) {
+    const report = allReports.find(item => item.id === reportId) || currentEditReport;
+    if (!report) return showMessage('Report not found.', 'error');
+
+    const safe = value => escapeHtml(value ?? '');
+    const metricBox = (label, value) => `
+      <div class="box">
+        <div class="label">${safe(label)}</div>
+        <div class="value">${safe(value)}</div>
+      </div>
+    `;
+
+    const totalPounds = getReportPounds(report);
+    const totalHours = getReportHours(report);
+    const aPounds = Number.isFinite(Number(report.aPounds)) ? Number(report.aPounds) : Math.max(0, Number(report.aMeterFinish || 0) - Number(report.aMeterStart || 0));
+    const bPounds = Number.isFinite(Number(report.bPounds)) ? Number(report.bPounds) : Math.max(0, Number(report.bMeterFinish || 0) - Number(report.bMeterStart || 0));
+    const poundComparison = getPoundComparison(report);
+    const efficiency = totalHours > 0 ? totalPounds / totalHours : 0;
+    const liftAreaSqFt = Number.isFinite(Number(report.liftAreaSqFt)) ? Number(report.liftAreaSqFt) : calculateLiftAreaSqFt(report.liftAreaLength, report.liftAreaWidth);
+
+    const profileRows = Array.isArray(report.profile) && report.profile.length ? report.profile.map(row => `
+      <tr>
+        <td>${safe(row.station)}</td>
+        <td>${safe(row.d1Before)}</td>
+        <td>${safe(row.d1After)}</td>
+        <td>${safe(row.d2Before)}</td>
+        <td>${safe(row.d2After)}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="5">No road profile readings recorded.</td></tr>';
+
+    const photoLinks = Array.isArray(report.photos) && report.photos.length ? `
+      <div class="photo-links">
+        ${report.photos.map((photo, index) => `
+          <a href="${safe(photo.url || photo.downloadURL || '')}" target="_blank" rel="noopener">Photo ${index + 1}${photo.name ? ` - ${safe(photo.name)}` : ''}</a>
+        `).join('')}
+      </div>
+    ` : '<p>No photos attached.</p>';
+
+    const auditRows = Array.isArray(report.auditTrail) && report.auditTrail.length ? report.auditTrail.map(entry => `
+      <tr>
+        <td>${safe(entry.action || '')}</td>
+        <td>${safe(entry.by || '')}</td>
+        <td>${safe(entry.at || '')}</td>
+        <td>${safe(entry.note || '')}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="4">No audit entries recorded.</td></tr>';
+
+    const popup = window.open('', '_blank');
+    if (!popup) return showMessage('Popup blocked. Allow popups to export PDF.', 'error');
+    popup.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>KKE Report ${safe(report.date || '')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 28px; color: #111827; }
+          .top { text-align:center; border-bottom: 4px solid #0057a8; padding-bottom: 14px; margin-bottom: 20px; }
+          .logo { max-width: 260px; max-height: 120px; object-fit: contain; }
+          h1 { color:#003f7d; margin: 10px 0 0; }
+          h2 { color:#003f7d; border-left:4px solid #0057a8; padding-left:10px; margin-top:24px; }
+          .section-note { color:#6b7280; font-size:12px; margin-top:-8px; }
+          .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .grid-3 { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+          .box { border:1px solid #d1d5db; border-radius: 10px; padding: 10px; break-inside: avoid; }
+          .label { font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:bold; }
+          .value { font-size:16px; font-weight:bold; margin-top:4px; overflow-wrap:anywhere; }
+          .full { grid-column: 1 / -1; }
+          table { width:100%; border-collapse:collapse; margin-top:12px; }
+          th, td { border:1px solid #d1d5db; padding:7px; font-size:12px; vertical-align:top; }
+          th { background:#f3f4f6; color:#003f7d; }
+          .photo-links { display:grid; gap:6px; }
+          .photo-links a { color:#0057a8; font-weight:bold; overflow-wrap:anywhere; }
+          .print-button { margin-top:20px; padding:12px 18px; background:#0057a8; color:white; border:0; border-radius:8px; font-weight:bold; }
+          @media print {
+            button { display:none; }
+            body { margin: 18px; }
+            .box, table { break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="top">
+          <img src="logo.png" class="logo" onerror="this.src='logo.jpg'">
+          <h1>Crew Profile Report</h1>
+          <div style="color:#6b7280; font-weight:bold; margin-top:6px;">${safe(report.city || '')} ${report.date ? '| ' + safe(report.date) : ''}</div>
+        </div>
+
+        <h2>Job Summary</h2>
+        <div class="grid">
+          ${metricBox('Date', report.date || '')}
+          ${metricBox('City', report.city || '')}
+          ${metricBox('Truck #', report.truckNumber || '')}
+          ${metricBox('Crew Lead / Truck Boss', report.crewLead || '')}
+          ${metricBox('Helper 1', report.helper1 || '')}
+          ${metricBox('Helper 2', report.helper2 || '')}
+          ${metricBox('Helper 3', report.helper3 || '')}
+          ${metricBox('Helper 4', report.helper4 || '')}
+          ${metricBox('Start Time', report.startTime || '')}
+          ${metricBox('Finish Time', report.finishTime || '')}
+          ${metricBox('Total Hours', fmtNumber(totalHours, 2))}
+          ${metricBox('Approval Status', report.approvalStatus || 'Needs Review')}
+          ${metricBox('Submitted By', report.submittedBy || '')}
+          ${metricBox('Last Modified By', report.lastModifiedBy || '')}
+          <div class="box full"><div class="label">Address / Location</div><div class="value">${safe(report.address || '')}</div></div>
+        </div>
+
+        <h2>Production Metrics</h2>
+        <p class="section-note">Includes meter readings, pounds, efficiency, clicks, lift height, and generator runtime.</p>
+        <div class="grid-3">
+          ${metricBox('A Lbs Start', report.aMeterStart || '0')}
+          ${metricBox('A Lbs Finish', report.aMeterFinish || '0')}
+          ${metricBox('A Pounds Used', `${fmtNumber(aPounds, 0)} lbs`)}
+          ${metricBox('B Lbs Start', report.bMeterStart || '0')}
+          ${metricBox('B Lbs Finish', report.bMeterFinish || '0')}
+          ${metricBox('B Pounds Used', `${fmtNumber(bPounds, 0)} lbs`)}
+          ${metricBox('Clicks', fmtNumber(poundComparison.clicks, 0))}
+          ${metricBox('Estimated Lbs', `${fmtNumber(poundComparison.estimatedPounds, 0)} lbs`)}
+          ${metricBox('Flow Meter Lbs', `${fmtNumber(poundComparison.flowMeterPounds, 0)} lbs`)}
+          ${metricBox('Difference %', `${fmtNumber(poundComparison.differencePercent, 1)}%`)}
+          ${metricBox('Difference Lbs', `${fmtNumber(poundComparison.differencePounds, 0)} lbs`)}
+          ${metricBox('Lbs / Hour', `${fmtNumber(efficiency, 0)} lbs/hr`)}
+          ${metricBox('Lift Height', report.lift || '')}
+          ${metricBox('Generator Run Time', report.generatorRunTime || '')}
+          ${metricBox('Linear Feet', report.linearFeet || '')}
+        </div>
+
+        <h2>Work Area Details</h2>
+        <div class="grid">
+          ${metricBox('Work Area Type', report.workAreaDisplay || report.workAreaType || '')}
+          ${metricBox('Other Area Type', report.workAreaOther || '')}
+          ${metricBox('Lift Area Length', report.liftAreaLength ? `${report.liftAreaLength} ft` : '')}
+          ${metricBox('Lift Area Width', report.liftAreaWidth ? `${report.liftAreaWidth} ft` : '')}
+          ${metricBox('Calculated Work Area', liftAreaSqFt ? `${fmtNumber(liftAreaSqFt, 2)} sq ft` : '')}
+          ${metricBox('Profile Interval', report.profileInterval ? `${report.profileInterval} ft` : '')}
+          <div class="box full"><div class="label">Area / Dimension Notes</div><div class="value">${safe(report.liftAreaNotes || '')}</div></div>
+        </div>
+
+        <h2>GPS Verification</h2>
+        <div class="grid">
+          ${metricBox('Latitude', report.gpsLatitude || '')}
+          ${metricBox('Longitude', report.gpsLongitude || '')}
+          ${metricBox('Location Confirmed', report.locationConfirmed ? 'Yes' : 'No')}
+          ${metricBox('Photo Count', report.photoCount || (Array.isArray(report.photos) ? report.photos.length : 0))}
+        </div>
+
+        <h2>Photos</h2>
+        ${photoLinks}
+
+        <h2>Notes</h2>
+        <div class="box"><div class="label">Crew Notes</div><div class="value">${safe(report.notes || '')}</div></div>
+        <div class="box" style="margin-top:10px;"><div class="label">Manager Notes</div><div class="value">${safe(report.managerNotes || '')}</div></div>
+
+        <h2>Road Profile</h2>
+        <table>
+          <thead><tr><th>Station</th><th>NE Before</th><th>NE After</th><th>SW Before</th><th>SW After</th></tr></thead>
+          <tbody>${profileRows}</tbody>
+        </table>
+
+        <h2>Audit Trail</h2>
+        <table>
+          <thead><tr><th>Action</th><th>By</th><th>At</th><th>Note</th></tr></thead>
+          <tbody>${auditRows}</tbody>
+        </table>
+
+        <button onclick="window.print()" class="print-button">Print / Save PDF</button>
+      </body>
+      </html>
+    `);
+    popup.document.close();
+    setTimeout(() => popup.focus(), 250);
+  };
+
+  document.getElementById('historySearch')?.addEventListener('input', renderHistory);
+  document.getElementById('historyCityFilter')?.addEventListener('change', renderHistory);
+  document.getElementById('historyTruckFilter')?.addEventListener('change', renderHistory);
+  document.getElementById('historyStatusFilter')?.addEventListener('change', renderHistory);
+  document.getElementById('btnClearFilters')?.addEventListener('click', () => {
+    document.getElementById('historySearch').value = '';
+    document.getElementById('historyCityFilter').value = '';
+    document.getElementById('historyTruckFilter').value = '';
+    document.getElementById('historyStatusFilter').value = '';
+    renderHistory();
+  });
+  document.getElementById('btnCloseEditModal')?.addEventListener('click', closeEditModal);
+  document.getElementById('btnCancelEdit')?.addEventListener('click', closeEditModal);
+  document.getElementById('btnSaveEdit')?.addEventListener('click', saveEditedReport);
+  document.getElementById('btnPrintReport')?.addEventListener('click', () => {
+    const id = document.getElementById('editDocId')?.value;
+    if (id) window.printReport(id);
+  });
+  document.getElementById('editModal')?.addEventListener('click', (event) => {
+    if (event.target.id === 'editModal') closeEditModal();
+  });
+
+</script>
+
+</body>
+</html>
+ 
