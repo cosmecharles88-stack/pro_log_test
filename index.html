@@ -2331,9 +2331,9 @@ document.addEventListener("change", (e) => {
       return { start: null, end: null, label: 'All Time' };
     }
 
-    if (rangeKey === 'today') return { ...ranges.today, label: 'Today' };
-    if (rangeKey === 'week') return { ...ranges.week, label: 'This Week' };
-    return { ...ranges.month, label: 'This Month' };
+   if (rangeKey === 'today') return { ...ranges.today, label: 'Today' };
+if (rangeKey === 'week') return { ...ranges.week, label: 'This Week' };
+return { ...ranges.month, label: 'This Month' };
   }
 
   function filterReportsByDashboardRange(docs, rangeKey = dashboardRange) {
