@@ -1893,6 +1893,36 @@
   provider.setCustomParameters({ prompt: "select_account" });
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'kke-profile-sheet-main';
 
+  // --- GOOGLE SHEET BACKUP CONFIG ---
+  // This pushes a non-blocking backup row to the KKE Production Backup Google Sheet.
+  // If Google Sheets fails, Firebase still saves the report and crews will not be stopped.
+  const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyRhwbJJdIzBUEP59Xnxq7GVbx7LRwdKkJy45r7FIF3pDN8A07urPEyeihFgOZdgNZQdA/exec";
+
+  function backupReportToGoogleSheet(data) {
+    if (!GOOGLE_SHEET_API_URL) return;
+
+    const sheetPayload = {
+      date: data.date || "",
+      month: data.date
+        ? new Date(`${data.date}T12:00:00`).toLocaleString('default', { month: 'long' })
+        : "",
+      city: data.city || "",
+      address: data.address || "",
+      truck: data.truckNumber || data.truck || "",
+      workArea: data.workAreaType || data.workAreaOther || "",
+      clicks: data.clicks || "",
+      inputLbs: data.totalPounds || data.estimatedPounds || ""
+    };
+
+    fetch(GOOGLE_SHEET_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(sheetPayload)
+    }).catch(sheetErr => {
+      console.warn("Google Sheet backup failed, but Firebase report was saved.", sheetErr);
+    });
+  }
+
   const ALLOWED_USERS = [
     "waltertimms365@gmail.com",
     "varga307188@gmail.com",
@@ -2678,6 +2708,7 @@ data.googlePlaceId = data.googlePlaceId || "";
 
       const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
       await addDoc(collRef, data);
+      backupReportToGoogleSheet(data);
       
       showMessage("Report saved to cloud successfully!");
       clearLocalDraft();
