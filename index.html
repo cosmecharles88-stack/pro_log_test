@@ -1811,8 +1811,10 @@
 
         <label>Event Type <span class="required">*</span>
           <select id="inventoryEventType" required>
-            <option value="install_tote">Install New Tote</option>
-            <option value="remove_tote">Remove Tote</option>
+            <option value="install_tote">Install New Main Tote</option>
+            <option value="remove_tote">Remove Main Tote</option>
+            <option value="add_to_pourup_reserve">Add Partial to Pour-Up Tote</option>
+            <option value="use_pourup_reserve">Use Pour-Up from Reserve</option>
           </select>
         </label>
 
@@ -1845,6 +1847,12 @@
             <option value="75">75%</option>
             <option value="100">Full / 100%</option>
           </select>
+          <div class="helper-text">On Remove Main Tote, this amount is added to that truck's pour-up reserve.</div>
+        </label>
+
+        <label>Pour-Up Reserve Amount (lbs)
+          <input id="inventoryPourupAmountLbs" type="number" step="0.01" placeholder="Only for reserve add/use events">
+          <div class="helper-text">Use for manual add/use events. Removal events calculate this from leftover %.</div>
         </label>
 
         <label class="span-2">Manufacture Date
@@ -1895,6 +1903,14 @@
       </div>
       <div id="inventoryDiscrepancyList" class="chemical-event-log">
         <div class="empty-state">No removal discrepancies yet.</div>
+      </div>
+    </div>
+
+    <div class="card" id="pourupReserveCard" style="display:none;">
+      <h2>Truck Pour-Up Reserve Levels</h2>
+      <p class="dashboard-note">Manager view only. This tracks each truck's dedicated A/B pour-up tote where partial leftovers are collected and later used for that same truck.</p>
+      <div id="pourupReserveGrid" class="chemical-grid">
+        <div class="empty-state">No pour-up reserve activity yet.</div>
       </div>
     </div>
   </div>
@@ -2291,6 +2307,8 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
       if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = isCurrentUserManager ? 'block' : 'none';
       const inventoryDiscrepancyCard = document.getElementById('inventoryDiscrepancyCard');
       if (inventoryDiscrepancyCard) inventoryDiscrepancyCard.style.display = isCurrentUserManager ? 'block' : 'none';
+      const pourupReserveCard = document.getElementById('pourupReserveCard');
+      if (pourupReserveCard) pourupReserveCard.style.display = isCurrentUserManager ? 'block' : 'none';
       const dashboardInventoryDiscrepancyCard = document.getElementById('dashboardInventoryDiscrepancyCard');
       if (dashboardInventoryDiscrepancyCard) dashboardInventoryDiscrepancyCard.style.display = isCurrentUserManager ? 'block' : 'none';
 
@@ -3628,7 +3646,7 @@ data.googlePlaceId = data.googlePlaceId || "";
   }
 
   function clearInventoryForm() {
-    ['inventoryLotNumber', 'inventoryToteId', 'inventoryMfgDate', 'inventoryExpDate', 'inventoryNotes'].forEach(id => {
+    ['inventoryLotNumber', 'inventoryToteId', 'inventoryMfgDate', 'inventoryExpDate', 'inventoryNotes', 'inventoryPourupAmountLbs'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -3693,6 +3711,53 @@ data.googlePlaceId = data.googlePlaceId || "";
     return 'OK';
   }
 
+  function getInventoryEventLabel(eventType) {
+    if (eventType === 'install_tote') return 'Install New Main Tote';
+    if (eventType === 'remove_tote') return 'Remove Main Tote';
+    if (eventType === 'add_to_pourup_reserve') return 'Add Partial to Pour-Up Tote';
+    if (eventType === 'use_pourup_reserve') return 'Use Pour-Up from Reserve';
+    return 'Inventory Event';
+  }
+
+  function getPourupReserveCapacity(truck, side) {
+    const pkg = String(truck) === '119' ? CHEMICAL_CAPACITY.barrel : CHEMICAL_CAPACITY.tote;
+    return Number(pkg?.[side] || 0);
+  }
+
+  function getPourupReserveState() {
+    const state = {};
+    latestInventoryEvents.forEach(event => {
+      const truck = String(event.truck || '').trim();
+      const side = event.side || '';
+      if (!truck || !side) return;
+      const key = `${truck}_${side}`;
+      if (!state[key]) {
+        state[key] = {
+          truck,
+          side,
+          capacity: getPourupReserveCapacity(truck, side),
+          remaining: 0,
+          added: 0,
+          used: 0,
+          events: 0
+        };
+      }
+
+      const delta = Number(event.pourupReserveDeltaLbs);
+      if (!Number.isFinite(delta) || delta === 0) return;
+      state[key].remaining += delta;
+      state[key].events += 1;
+      if (delta > 0) state[key].added += delta;
+      if (delta < 0) state[key].used += Math.abs(delta);
+    });
+
+    Object.values(state).forEach(item => {
+      item.remaining = Math.max(0, item.remaining);
+    });
+
+    return state;
+  }
+
   async function saveInventoryEvent() {
     if (!auth.currentUser) {
       showInventoryMessage('You must be signed in to save inventory events.', 'error');
@@ -3711,14 +3776,21 @@ data.googlePlaceId = data.googlePlaceId || "";
     const expirationDate = document.getElementById('inventoryExpDate')?.value || '';
     const notes = document.getElementById('inventoryNotes')?.value.trim() || '';
     const photoFile = document.getElementById('inventoryPhoto')?.files?.[0] || null;
+    const pourupAmountLbs = Number(document.getElementById('inventoryPourupAmountLbs')?.value || 0);
 
     if (!truck || !side || !eventType || !packageType) {
       showInventoryMessage('Truck, side, event type, and package type are required.', 'error');
       return;
     }
 
-    if (!photoFile) {
-      showInventoryMessage('Please take or upload a tote label photo before saving.', 'error');
+    const photoRequired = eventType === 'install_tote' || eventType === 'remove_tote' || eventType === 'add_to_pourup_reserve';
+    if (photoRequired && !photoFile) {
+      showInventoryMessage('Please take or upload a tote/label photo before saving.', 'error');
+      return;
+    }
+
+    if ((eventType === 'add_to_pourup_reserve' || eventType === 'use_pourup_reserve') && (!Number.isFinite(pourupAmountLbs) || pourupAmountLbs <= 0)) {
+      showInventoryMessage('Enter a positive Pour-Up Reserve Amount in pounds for this event.', 'error');
       return;
     }
 
@@ -3744,12 +3816,25 @@ data.googlePlaceId = data.googlePlaceId || "";
         ? (discrepancyLbs / netWeight) * 100
         : null;
       const discrepancyStatus = getDiscrepancyStatus(discrepancyLbs, netWeight);
+      const manualReserveAmount = Number.isFinite(pourupAmountLbs) ? Math.max(0, pourupAmountLbs) : 0;
+      const pourupReserveDeltaLbs = eventType === 'remove_tote' && Number.isFinite(actualLeftoverLbs)
+        ? actualLeftoverLbs
+        : eventType === 'add_to_pourup_reserve'
+          ? manualReserveAmount
+          : eventType === 'use_pourup_reserve'
+            ? -manualReserveAmount
+            : 0;
+      const reserveAction = pourupReserveDeltaLbs > 0
+        ? 'added_to_truck_pourup_reserve'
+        : pourupReserveDeltaLbs < 0
+          ? 'used_from_truck_pourup_reserve'
+          : '';
 
       const payload = {
         truck: String(truck),
         side,
         eventType,
-        eventLabel: eventType === 'install_tote' ? 'Install New Tote' : 'Remove Tote',
+        eventLabel: getInventoryEventLabel(eventType),
         packageType,
         lotNumber,
         netWeight: Number.isFinite(netWeight) ? netWeight : 0,
@@ -3761,6 +3846,9 @@ data.googlePlaceId = data.googlePlaceId || "";
         discrepancyLbs,
         discrepancyPercent,
         discrepancyStatus,
+        pourupAmountLbs: Number.isFinite(pourupAmountLbs) ? pourupAmountLbs : 0,
+        pourupReserveDeltaLbs,
+        reserveAction,
         manufactureDate,
         expirationDate,
         notes,
@@ -3769,7 +3857,7 @@ data.googlePlaceId = data.googlePlaceId || "";
         createdBy: auth.currentUser.email || 'unknown',
         createdAt: serverTimestamp(),
         createdAtIso: nowIso,
-        status: eventType === 'remove_tote' ? discrepancyStatus : 'Needs Review'
+        status: eventType === 'remove_tote' ? discrepancyStatus : (eventType === 'use_pourup_reserve' || eventType === 'add_to_pourup_reserve' ? 'OK' : 'Needs Review')
       };
 
       const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'truckInventoryEvents');
@@ -3828,6 +3916,10 @@ data.googlePlaceId = data.googlePlaceId || "";
       const discrepancyLine = Number.isFinite(discrepancy)
         ? `<br>Expected: ${fmtNumber(event.expectedLeftoverLbs || 0, 0)} lbs | Actual: ${fmtNumber(event.actualLeftoverLbs || 0, 0)} lbs | Variance: ${discrepancy > 0 ? '+' : ''}${fmtNumber(discrepancy, 0)} lbs`
         : '';
+      const reserveDelta = Number(event.pourupReserveDeltaLbs);
+      const reserveLine = Number.isFinite(reserveDelta) && reserveDelta !== 0
+        ? `<br>Pour-Up Reserve: ${reserveDelta > 0 ? '+' : ''}${fmtNumber(reserveDelta, 0)} lbs`
+        : '';
       const status = event.status || event.discrepancyStatus || 'Needs Review';
       const statusClassName = status === 'OK' ? 'status-approved' : (status === 'Flagged' ? 'status-rejected' : 'status-review');
       const photoLink = event.photoUrl
@@ -3839,7 +3931,7 @@ data.googlePlaceId = data.googlePlaceId || "";
           <span class="status-pill ${statusClassName}">${escapeHtml(status)}</span>
         </div>
         Truck ${escapeHtml(event.truck || '—')} ${escapeHtml(event.side || '')}-Side — ${escapeHtml(event.eventLabel || event.eventType || 'Inventory Event')}
-        <br>Lot: ${escapeHtml(event.lotNumber || 'N/A')} | ${escapeHtml(event.packageType || '')} | Net: ${fmtNumber(event.netWeight || 0, 0)} lbs${leftover}${photoLink}${discrepancyLine}
+        <br>Lot: ${escapeHtml(event.lotNumber || 'N/A')} | ${escapeHtml(event.packageType || '')} | Net: ${fmtNumber(event.netWeight || 0, 0)} lbs${leftover}${photoLink}${discrepancyLine}${reserveLine}
         <div class="inventory-event-meta">By ${escapeHtml(event.createdBy || 'unknown')}${event.notes ? ` — ${escapeHtml(event.notes)}` : ''}</div>
       </div>`;
     }).join('') : '<div class="empty-state">No inventory events yet.</div>';
@@ -3900,6 +3992,43 @@ data.googlePlaceId = data.googlePlaceId || "";
     lists.forEach(list => { list.innerHTML = html; });
   }
 
+  function renderPourupReserveLevels() {
+    const box = document.getElementById('pourupReserveGrid');
+    if (!box) return;
+
+    const trucks = ['102', '107', '118', '119', '203'];
+    const state = getPourupReserveState();
+
+    box.innerHTML = trucks.map(truck => {
+      const a = state[`${truck}_A`] || { truck, side: 'A', capacity: getPourupReserveCapacity(truck, 'A'), remaining: 0, added: 0, used: 0, events: 0 };
+      const b = state[`${truck}_B`] || { truck, side: 'B', capacity: getPourupReserveCapacity(truck, 'B'), remaining: 0, added: 0, used: 0, events: 0 };
+
+      const sideHtml = [a, b].map(item => {
+        const percent = item.capacity > 0 ? Math.max(0, Math.min(100, (item.remaining / item.capacity) * 100)) : 0;
+        const cls = item.side === 'A' ? 'chem-side-a' : 'chem-side-b';
+        return `<div class="chemical-side-card">
+          <div class="chemical-side-title">
+            <span>${item.side}-Side Pour-Up</span>
+            <span class="chemical-percent">${fmtNumber(percent, 0)}%</span>
+          </div>
+          <div class="chemical-level-track">
+            <div class="chemical-level-fill ${cls}" style="--chem-width:${percent}%"></div>
+          </div>
+          <div class="chemical-side-value">${fmtNumber(item.remaining, 0)} lbs</div>
+          <div class="chemical-side-sub">Added ${fmtNumber(item.added, 0)} lbs • Used ${fmtNumber(item.used, 0)} lbs</div>
+        </div>`;
+      }).join('');
+
+      return `<div class="chemical-truck-card">
+        <div class="chemical-truck-header">
+          <div class="chemical-truck-title">Truck ${truck}</div>
+          <div class="chemical-package-pill">Dedicated Pour-Up Tote</div>
+        </div>
+        <div class="chemical-side-grid">${sideHtml}</div>
+      </div>`;
+    }).join('');
+  }
+
   function loadInventoryEvents() {
     if (!auth.currentUser || !isCurrentUserManager) return;
     const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'truckInventoryEvents');
@@ -3908,6 +4037,7 @@ data.googlePlaceId = data.googlePlaceId || "";
       latestInventoryEvents = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       renderInventoryEvents();
       renderInventoryAccountability();
+      renderPourupReserveLevels();
     }, (err) => {
       console.error(err);
       const box = document.getElementById('inventoryEventList');
@@ -3920,7 +4050,9 @@ data.googlePlaceId = data.googlePlaceId || "";
   document.getElementById('inventoryEventType')?.addEventListener('change', () => {
     const eventType = document.getElementById('inventoryEventType')?.value || '';
     const leftover = document.getElementById('inventoryLeftoverPercent');
-    if (leftover && eventType === 'install_tote') leftover.value = '';
+    const amount = document.getElementById('inventoryPourupAmountLbs');
+    if (leftover && eventType !== 'remove_tote') leftover.value = '';
+    if (amount && (eventType === 'install_tote' || eventType === 'remove_tote')) amount.value = '';
   });
   ['inventoryTruck', 'inventorySide', 'inventoryPackageType'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => {
