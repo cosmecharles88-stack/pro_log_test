@@ -1696,6 +1696,20 @@
       <div id="trendMetrics" class="empty-state">No trend data yet.</div>
     </div>
 
+    <div class="card" id="dashboardInventoryDiscrepancyCard" style="display:none;">
+      <h2>Truck Accountability / Discrepancy</h2>
+      <p class="dashboard-note">Manager view only. Removal events compare expected chemical remaining against the crew-entered leftover estimate.</p>
+      <div class="grid" style="margin-bottom:16px;">
+        <div class="calc-box"><div class="calc-label">Removal Events</div><div class="calc-value" id="dashInvRemovalCount">0</div></div>
+        <div class="calc-box"><div class="calc-label">Flagged Discrepancies</div><div class="calc-value" id="dashInvFlaggedCount">0</div></div>
+        <div class="calc-box"><div class="calc-label">Net Variance</div><div class="calc-value" id="dashInvNetVariance">0</div></div>
+        <div class="calc-box"><div class="calc-label">Worst Truck</div><div class="calc-value" id="dashInvWorstTruck">—</div></div>
+      </div>
+      <div id="dashboardInventoryDiscrepancyList" class="chemical-event-log">
+        <div class="empty-state">No removal discrepancies yet.</div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>Reports Needing Review</h2>
       <div id="flaggedReports" class="empty-state">No flagged reports.</div>
@@ -2277,6 +2291,8 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
       if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = isCurrentUserManager ? 'block' : 'none';
       const inventoryDiscrepancyCard = document.getElementById('inventoryDiscrepancyCard');
       if (inventoryDiscrepancyCard) inventoryDiscrepancyCard.style.display = isCurrentUserManager ? 'block' : 'none';
+      const dashboardInventoryDiscrepancyCard = document.getElementById('dashboardInventoryDiscrepancyCard');
+      if (dashboardInventoryDiscrepancyCard) dashboardInventoryDiscrepancyCard.style.display = isCurrentUserManager ? 'block' : 'none';
 
       loadHistory();
       if (isCurrentUserManager) {
@@ -2293,10 +2309,14 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
       const chemicalTab = document.getElementById('tabChemical');
       const inventoryTab = document.getElementById('tabInventory');
       const inventoryManagerLogCard = document.getElementById('inventoryManagerLogCard');
+      const inventoryDiscrepancyCard = document.getElementById('inventoryDiscrepancyCard');
+      const dashboardInventoryDiscrepancyCard = document.getElementById('dashboardInventoryDiscrepancyCard');
       if (dashboardTab) dashboardTab.style.display = 'none';
       if (chemicalTab) chemicalTab.style.display = 'none';
       if (inventoryTab) inventoryTab.style.display = 'none';
       if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = 'none';
+      if (inventoryDiscrepancyCard) inventoryDiscrepancyCard.style.display = 'none';
+      if (dashboardInventoryDiscrepancyCard) dashboardInventoryDiscrepancyCard.style.display = 'none';
       switchTab('new-form');
     }
   });
@@ -3826,9 +3846,10 @@ data.googlePlaceId = data.googlePlaceId || "";
   }
 
   function renderInventoryAccountability() {
-    const summary = document.getElementById('inventoryAccountabilitySummary');
-    const list = document.getElementById('inventoryDiscrepancyList');
-    if (!summary || !list) return;
+    const lists = [
+      document.getElementById('inventoryDiscrepancyList'),
+      document.getElementById('dashboardInventoryDiscrepancyList')
+    ].filter(Boolean);
 
     const removals = latestInventoryEvents.filter(event => event.eventType === 'remove_tote');
     const withDiscrepancy = removals.filter(event => Number.isFinite(Number(event.discrepancyLbs)));
@@ -3846,13 +3867,21 @@ data.googlePlaceId = data.googlePlaceId || "";
     });
 
     const worst = Object.values(byTruck).sort((a, b) => b.absVariance - a.absVariance)[0];
-    setText('invRemovalCount', fmtNumber(removals.length, 0));
-    setText('invFlaggedCount', fmtNumber(flagged.length, 0));
-    setText('invNetVariance', `${netVariance > 0 ? '+' : ''}${fmtNumber(netVariance, 0)} lbs`);
-    setText('invWorstTruck', worst ? `Truck ${worst.truck}` : '—');
+    const summaryValues = {
+      invRemovalCount: fmtNumber(removals.length, 0),
+      invFlaggedCount: fmtNumber(flagged.length, 0),
+      invNetVariance: `${netVariance > 0 ? '+' : ''}${fmtNumber(netVariance, 0)} lbs`,
+      invWorstTruck: worst ? `Truck ${worst.truck}` : '—',
+      dashInvRemovalCount: fmtNumber(removals.length, 0),
+      dashInvFlaggedCount: fmtNumber(flagged.length, 0),
+      dashInvNetVariance: `${netVariance > 0 ? '+' : ''}${fmtNumber(netVariance, 0)} lbs`,
+      dashInvWorstTruck: worst ? `Truck ${worst.truck}` : '—'
+    };
+
+    Object.entries(summaryValues).forEach(([id, value]) => setText(id, value));
 
     const sorted = [...withDiscrepancy].sort((a, b) => Math.abs(Number(b.discrepancyLbs || 0)) - Math.abs(Number(a.discrepancyLbs || 0)));
-    list.innerHTML = sorted.length ? sorted.slice(0, 30).map(event => {
+    const html = sorted.length ? sorted.slice(0, 30).map(event => {
       const variance = Number(event.discrepancyLbs || 0);
       const status = event.status || event.discrepancyStatus || 'Needs Review';
       const statusClassName = status === 'OK' ? 'status-approved' : (status === 'Flagged' ? 'status-rejected' : 'status-review');
@@ -3866,7 +3895,9 @@ data.googlePlaceId = data.googlePlaceId || "";
         <br>Expected: ${fmtNumber(event.expectedLeftoverLbs || 0, 0)} lbs | Actual: ${fmtNumber(event.actualLeftoverLbs || 0, 0)} lbs | Leftover: ${event.leftoverPercent ?? '—'}%
         <div class="inventory-event-meta">${escapeHtml(at)} | Lot: ${escapeHtml(event.lotNumber || 'N/A')} | By ${escapeHtml(event.createdBy || 'unknown')}</div>
       </div>`;
-    }).join('') : '<div class="empty-state">No removal discrepancies yet.</div>';
+    }).join('') : '<div class="empty-state">No removal discrepancies yet. Submit a Remove Tote event with an Actual Leftover % to populate this section.</div>';
+
+    lists.forEach(list => { list.innerHTML = html; });
   }
 
   function loadInventoryEvents() {
