@@ -3129,10 +3129,56 @@ data.googlePlaceId = data.googlePlaceId || "";
     return dt ? dt.getTime() : 0;
   }
 
-  function getSideUsageFromReport(report, side) {
+  function getRawSideUsageFromReport(report, side) {
+    const savedKey = side === 'A' ? 'aPounds' : 'bPounds';
+    const savedValue = Number(report?.[savedKey]);
+    if (Number.isFinite(savedValue) && savedValue >= 0) return savedValue;
+
     const start = Number(side === 'A' ? report.aMeterStart : report.bMeterStart) || 0;
     const finish = Number(side === 'A' ? report.aMeterFinish : report.bMeterFinish) || 0;
     return Math.max(0, finish - start);
+  }
+
+  function getBalancedChemicalUsageFromReport(report) {
+    const rawA = getRawSideUsageFromReport(report, 'A');
+    const rawB = getRawSideUsageFromReport(report, 'B');
+    const gallonsA = rawA > 0 ? rawA / CHEMICAL_LBS_PER_GALLON.A : 0;
+    const gallonsB = rawB > 0 ? rawB / CHEMICAL_LBS_PER_GALLON.B : 0;
+
+    // Polyurethane is used as a balanced A/B system. If one meter entry is missing or wildly
+    // out of balance, normalize by equivalent gallons so one bad B-side reading cannot
+    // make the B-side inventory collapse compared with A-side.
+    let normalizedGallons = 0;
+    const bothSidesEntered = gallonsA > 0 && gallonsB > 0;
+
+    if (bothSidesEntered) {
+      const larger = Math.max(gallonsA, gallonsB);
+      const smaller = Math.min(gallonsA, gallonsB);
+      const ratio = smaller > 0 ? larger / smaller : Infinity;
+      normalizedGallons = ratio > 1.35 ? (gallonsA + gallonsB) / 2 : (sideAverage(gallonsA, gallonsB));
+    } else {
+      normalizedGallons = gallonsA || gallonsB || 0;
+    }
+
+    return {
+      A: Math.max(0, normalizedGallons * CHEMICAL_LBS_PER_GALLON.A),
+      B: Math.max(0, normalizedGallons * CHEMICAL_LBS_PER_GALLON.B),
+      rawA,
+      rawB,
+      gallonsA,
+      gallonsB,
+      normalizedGallons
+    };
+  }
+
+  function sideAverage(a, b) {
+    const values = [a, b].filter(value => Number.isFinite(value) && value > 0);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+  }
+
+  function getSideUsageFromReport(report, side) {
+    const balanced = getBalancedChemicalUsageFromReport(report);
+    return side === 'A' ? balanced.A : balanced.B;
   }
 
   function getChemicalStateForTruck(truck, side) {
