@@ -1869,6 +1869,20 @@
         <div class="empty-state">No inventory events yet.</div>
       </div>
     </div>
+
+    <div class="card" id="inventoryDiscrepancyCard" style="display:none;">
+      <h2>Discrepancy / Truck Accountability</h2>
+      <p class="dashboard-note">Manager view only. Removal events compare expected chemical remaining against the crew-entered leftover estimate.</p>
+      <div id="inventoryAccountabilitySummary" class="grid" style="margin-bottom:16px;">
+        <div class="calc-box"><div class="calc-label">Removal Events</div><div class="calc-value" id="invRemovalCount">0</div></div>
+        <div class="calc-box"><div class="calc-label">Flagged Discrepancies</div><div class="calc-value" id="invFlaggedCount">0</div></div>
+        <div class="calc-box"><div class="calc-label">Net Variance</div><div class="calc-value" id="invNetVariance">0</div></div>
+        <div class="calc-box"><div class="calc-label">Worst Truck</div><div class="calc-value" id="invWorstTruck">—</div></div>
+      </div>
+      <div id="inventoryDiscrepancyList" class="chemical-event-log">
+        <div class="empty-state">No removal discrepancies yet.</div>
+      </div>
+    </div>
   </div>
 
 
@@ -2261,6 +2275,8 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
       if (inventoryTab) inventoryTab.style.display = 'block';
       const inventoryManagerLogCard = document.getElementById('inventoryManagerLogCard');
       if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = isCurrentUserManager ? 'block' : 'none';
+      const inventoryDiscrepancyCard = document.getElementById('inventoryDiscrepancyCard');
+      if (inventoryDiscrepancyCard) inventoryDiscrepancyCard.style.display = isCurrentUserManager ? 'block' : 'none';
 
       loadHistory();
       if (isCurrentUserManager) {
@@ -3636,6 +3652,27 @@ data.googlePlaceId = data.googlePlaceId || "";
     };
   }
 
+  function getExpectedInventoryRemainingForEvent(truck, side, eventType) {
+    if (eventType !== 'remove_tote') return null;
+    try {
+      const state = getChemicalStateForTruck(truck, side);
+      const remaining = Number(state?.remaining);
+      return Number.isFinite(remaining) ? Math.max(0, remaining) : null;
+    } catch (err) {
+      console.warn('Expected inventory calculation unavailable:', err);
+      return null;
+    }
+  }
+
+  function getDiscrepancyStatus(discrepancyLbs, netWeight) {
+    if (!Number.isFinite(discrepancyLbs)) return 'Pending Review';
+    const abs = Math.abs(discrepancyLbs);
+    const percent = netWeight > 0 ? (abs / netWeight) * 100 : 0;
+    if (abs >= 150 || percent >= 8) return 'Flagged';
+    if (abs >= 75 || percent >= 4) return 'Needs Review';
+    return 'OK';
+  }
+
   async function saveInventoryEvent() {
     if (!auth.currentUser) {
       showInventoryMessage('You must be signed in to save inventory events.', 'error');
@@ -3678,6 +3715,15 @@ data.googlePlaceId = data.googlePlaceId || "";
       const calculatedLeftoverLbs = Number.isFinite(leftoverPercent) && netWeight > 0
         ? (netWeight * leftoverPercent) / 100
         : null;
+      const expectedLeftoverLbs = getExpectedInventoryRemainingForEvent(truck, side, eventType);
+      const actualLeftoverLbs = eventType === 'remove_tote' ? calculatedLeftoverLbs : null;
+      const discrepancyLbs = eventType === 'remove_tote' && Number.isFinite(expectedLeftoverLbs) && Number.isFinite(actualLeftoverLbs)
+        ? actualLeftoverLbs - expectedLeftoverLbs
+        : null;
+      const discrepancyPercent = Number.isFinite(discrepancyLbs) && netWeight > 0
+        ? (discrepancyLbs / netWeight) * 100
+        : null;
+      const discrepancyStatus = getDiscrepancyStatus(discrepancyLbs, netWeight);
 
       const payload = {
         truck: String(truck),
@@ -3690,6 +3736,11 @@ data.googlePlaceId = data.googlePlaceId || "";
         toteId,
         leftoverPercent,
         calculatedLeftoverLbs,
+        expectedLeftoverLbs,
+        actualLeftoverLbs,
+        discrepancyLbs,
+        discrepancyPercent,
+        discrepancyStatus,
         manufactureDate,
         expirationDate,
         notes,
@@ -3698,19 +3749,30 @@ data.googlePlaceId = data.googlePlaceId || "";
         createdBy: auth.currentUser.email || 'unknown',
         createdAt: serverTimestamp(),
         createdAtIso: nowIso,
-        status: 'Needs Review'
+        status: eventType === 'remove_tote' ? discrepancyStatus : 'Needs Review'
       };
 
       const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'truckInventoryEvents');
       await addDoc(eventsRef, payload);
 
+      const currentRef = firestoreDoc(db, 'artifacts', appId, 'public', 'data', 'toteInstalls', `${truck}_${side}`);
       if (eventType === 'install_tote') {
-        const currentRef = firestoreDoc(db, 'artifacts', appId, 'public', 'data', 'toteInstalls', `${truck}_${side}`);
         await setDoc(currentRef, {
           ...payload,
           installedAt: serverTimestamp(),
           installedAtIso: nowIso,
+          removedAt: null,
+          removedAtIso: null,
           current: true
+        }, { merge: true });
+      }
+
+      if (eventType === 'remove_tote') {
+        await setDoc(currentRef, {
+          removedAt: serverTimestamp(),
+          removedAtIso: nowIso,
+          removalEvent: payload,
+          current: false
         }, { merge: true });
       }
 
@@ -3742,19 +3804,69 @@ data.googlePlaceId = data.googlePlaceId || "";
       const leftover = event.leftoverPercent !== null && event.leftoverPercent !== undefined
         ? ` | Leftover: ${fmtNumber(event.leftoverPercent, 0)}%`
         : '';
+      const discrepancy = Number(event.discrepancyLbs);
+      const discrepancyLine = Number.isFinite(discrepancy)
+        ? `<br>Expected: ${fmtNumber(event.expectedLeftoverLbs || 0, 0)} lbs | Actual: ${fmtNumber(event.actualLeftoverLbs || 0, 0)} lbs | Variance: ${discrepancy > 0 ? '+' : ''}${fmtNumber(discrepancy, 0)} lbs`
+        : '';
+      const status = event.status || event.discrepancyStatus || 'Needs Review';
+      const statusClassName = status === 'OK' ? 'status-approved' : (status === 'Flagged' ? 'status-rejected' : 'status-review');
       const photoLink = event.photoUrl
         ? ` | <a href="${escapeHtml(event.photoUrl)}" target="_blank" rel="noopener">Photo</a>`
         : '';
       return `<div class="chemical-event-item">
         <div class="inventory-event-header">
           <strong>${escapeHtml(at)}</strong>
-          <span class="status-pill status-review">${escapeHtml(event.status || 'Needs Review')}</span>
+          <span class="status-pill ${statusClassName}">${escapeHtml(status)}</span>
         </div>
         Truck ${escapeHtml(event.truck || '—')} ${escapeHtml(event.side || '')}-Side — ${escapeHtml(event.eventLabel || event.eventType || 'Inventory Event')}
-        <br>Lot: ${escapeHtml(event.lotNumber || 'N/A')} | ${escapeHtml(event.packageType || '')} | Net: ${fmtNumber(event.netWeight || 0, 0)} lbs${leftover}${photoLink}
+        <br>Lot: ${escapeHtml(event.lotNumber || 'N/A')} | ${escapeHtml(event.packageType || '')} | Net: ${fmtNumber(event.netWeight || 0, 0)} lbs${leftover}${photoLink}${discrepancyLine}
         <div class="inventory-event-meta">By ${escapeHtml(event.createdBy || 'unknown')}${event.notes ? ` — ${escapeHtml(event.notes)}` : ''}</div>
       </div>`;
     }).join('') : '<div class="empty-state">No inventory events yet.</div>';
+  }
+
+  function renderInventoryAccountability() {
+    const summary = document.getElementById('inventoryAccountabilitySummary');
+    const list = document.getElementById('inventoryDiscrepancyList');
+    if (!summary || !list) return;
+
+    const removals = latestInventoryEvents.filter(event => event.eventType === 'remove_tote');
+    const withDiscrepancy = removals.filter(event => Number.isFinite(Number(event.discrepancyLbs)));
+    const flagged = withDiscrepancy.filter(event => (event.status || event.discrepancyStatus) === 'Flagged');
+    const netVariance = withDiscrepancy.reduce((sum, event) => sum + Number(event.discrepancyLbs || 0), 0);
+    const byTruck = {};
+
+    withDiscrepancy.forEach(event => {
+      const truck = event.truck || 'Unknown';
+      if (!byTruck[truck]) byTruck[truck] = { truck, absVariance: 0, netVariance: 0, count: 0 };
+      const variance = Number(event.discrepancyLbs || 0);
+      byTruck[truck].absVariance += Math.abs(variance);
+      byTruck[truck].netVariance += variance;
+      byTruck[truck].count += 1;
+    });
+
+    const worst = Object.values(byTruck).sort((a, b) => b.absVariance - a.absVariance)[0];
+    setText('invRemovalCount', fmtNumber(removals.length, 0));
+    setText('invFlaggedCount', fmtNumber(flagged.length, 0));
+    setText('invNetVariance', `${netVariance > 0 ? '+' : ''}${fmtNumber(netVariance, 0)} lbs`);
+    setText('invWorstTruck', worst ? `Truck ${worst.truck}` : '—');
+
+    const sorted = [...withDiscrepancy].sort((a, b) => Math.abs(Number(b.discrepancyLbs || 0)) - Math.abs(Number(a.discrepancyLbs || 0)));
+    list.innerHTML = sorted.length ? sorted.slice(0, 30).map(event => {
+      const variance = Number(event.discrepancyLbs || 0);
+      const status = event.status || event.discrepancyStatus || 'Needs Review';
+      const statusClassName = status === 'OK' ? 'status-approved' : (status === 'Flagged' ? 'status-rejected' : 'status-review');
+      const at = event.createdAt?.toDate ? event.createdAt.toDate().toLocaleString() : (event.createdAtIso ? new Date(event.createdAtIso).toLocaleString() : 'No date');
+      return `<div class="chemical-event-item">
+        <div class="inventory-event-header">
+          <strong>Truck ${escapeHtml(event.truck || '—')} ${escapeHtml(event.side || '')}-Side</strong>
+          <span class="status-pill ${statusClassName}">${escapeHtml(status)}</span>
+        </div>
+        Variance: <strong>${variance > 0 ? '+' : ''}${fmtNumber(variance, 0)} lbs</strong>
+        <br>Expected: ${fmtNumber(event.expectedLeftoverLbs || 0, 0)} lbs | Actual: ${fmtNumber(event.actualLeftoverLbs || 0, 0)} lbs | Leftover: ${event.leftoverPercent ?? '—'}%
+        <div class="inventory-event-meta">${escapeHtml(at)} | Lot: ${escapeHtml(event.lotNumber || 'N/A')} | By ${escapeHtml(event.createdBy || 'unknown')}</div>
+      </div>`;
+    }).join('') : '<div class="empty-state">No removal discrepancies yet.</div>';
   }
 
   function loadInventoryEvents() {
@@ -3764,6 +3876,7 @@ data.googlePlaceId = data.googlePlaceId || "";
     inventoryEventsUnsubscribe = onSnapshot(eventsRef, (snapshot) => {
       latestInventoryEvents = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       renderInventoryEvents();
+      renderInventoryAccountability();
     }, (err) => {
       console.error(err);
       const box = document.getElementById('inventoryEventList');
@@ -3773,6 +3886,11 @@ data.googlePlaceId = data.googlePlaceId || "";
 
   document.getElementById('btnSaveInventoryEvent')?.addEventListener('click', saveInventoryEvent);
   document.getElementById('btnClearInventoryForm')?.addEventListener('click', clearInventoryForm);
+  document.getElementById('inventoryEventType')?.addEventListener('change', () => {
+    const eventType = document.getElementById('inventoryEventType')?.value || '';
+    const leftover = document.getElementById('inventoryLeftoverPercent');
+    if (leftover && eventType === 'install_tote') leftover.value = '';
+  });
   ['inventoryTruck', 'inventorySide', 'inventoryPackageType'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => {
       if (id === 'inventoryPackageType') document.getElementById(id).dataset.userChanged = 'true';
