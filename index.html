@@ -743,6 +743,43 @@
     }
 
 
+    /* Truck Inventory / Tote Tracking */
+    .inventory-photo-preview {
+      display: none;
+      margin-top: 10px;
+      max-width: 260px;
+      max-height: 180px;
+      border-radius: 12px;
+      border: 1px solid #dbeafe;
+      object-fit: cover;
+    }
+
+    .inventory-event-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .inventory-event-meta {
+      color: var(--gray);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .inventory-helper-card {
+      background: #f8fbff;
+      border: 1px solid #dbeafe;
+      border-radius: 14px;
+      padding: 12px;
+      color: #374151;
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+
     @media (max-width: 768px) {
       .tabs { overflow-x: auto; }
       .tab-btn { min-width: 120px; }
@@ -1130,6 +1167,7 @@
     <button id="tabHistory" class="tab-btn">History</button>
     <button id="tabDashboard" class="tab-btn" style="display:none;">Dashboard</button>
     <button id="tabChemical" class="tab-btn" style="display:none;">Chemical Tracker</button>
+    <button id="tabInventory" class="tab-btn" style="display:none;">Truck Inventory</button>
     <button id="btnLogout" class="tab-btn" style="color: var(--danger); flex: 0.4;">Logout</button>
   </div>
 
@@ -1716,6 +1754,124 @@
     </div>
   </div>
 
+  <!-- Truck Inventory Tab -->
+  <div id="inventory" class="tab-content">
+    <div class="header">
+      <div class="header-topline"></div>
+      <div class="header-inner">
+        <div class="brand-panel">
+          <img src="logo.png" alt="KKE Concrete Lifting" class="brand-logo" onerror="swapLogoOrFallback(this)">
+          <div class="logo-placeholder" style="display:none;">KKE CONCRETE</div>
+        </div>
+        <div class="title-box">
+          <p class="eyebrow">Truck Inventory</p>
+          <h1>Tote Install / Removal Log</h1>
+          <p>Field-friendly tote changeout records with photo backup and manager review.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="inventoryStatusMessage" class="message-box"></div>
+
+    <div class="card">
+      <h2>Record Tote Event</h2>
+      <p class="dashboard-note">Crew users can record install/removal events. Managers can review and correct inventory later. This does not expose true inventory totals to the field.</p>
+
+      <div class="grid">
+        <label>Truck <span class="required">*</span>
+          <select id="inventoryTruck" required>
+            <option value="102">102</option>
+            <option value="107">107</option>
+            <option value="118">118</option>
+            <option value="119">119</option>
+            <option value="203">203</option>
+          </select>
+        </label>
+
+        <label>Side <span class="required">*</span>
+          <select id="inventorySide" required>
+            <option value="A">A-Side</option>
+            <option value="B">B-Side</option>
+          </select>
+        </label>
+
+        <label>Event Type <span class="required">*</span>
+          <select id="inventoryEventType" required>
+            <option value="install_tote">Install New Tote</option>
+            <option value="remove_tote">Remove Tote</option>
+          </select>
+        </label>
+
+        <label>Package Type <span class="required">*</span>
+          <select id="inventoryPackageType" required>
+            <option value="tote">Tote</option>
+            <option value="barrel">Barrel</option>
+          </select>
+        </label>
+
+        <label>Lot Number
+          <input id="inventoryLotNumber" placeholder="Example: GE023110 or L7841">
+        </label>
+
+        <label>Net Weight / Full Weight
+          <input id="inventoryNetWeight" type="number" step="0.01" placeholder="Auto suggested by truck/side">
+        </label>
+
+        <label>Tote ID / QR / Serial
+          <input id="inventoryToteId" placeholder="Optional tote number or QR value">
+        </label>
+
+        <label>Actual Leftover %
+          <select id="inventoryLeftoverPercent">
+            <option value="">Not applicable / unknown</option>
+            <option value="0">Empty / 0%</option>
+            <option value="10">10%</option>
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">Full / 100%</option>
+          </select>
+        </label>
+
+        <label class="span-2">Manufacture Date
+          <input id="inventoryMfgDate" type="date">
+        </label>
+
+        <label class="span-2">Expiration Date
+          <input id="inventoryExpDate" type="date">
+        </label>
+
+        <label class="span-4">Tote Label Photo <span class="required">*</span>
+          <input id="inventoryPhoto" type="file" accept="image/*" capture="environment" required>
+          <div class="helper-text">Take a clear picture of the label. Future AI/OCR can use this photo to auto-fill lot number, weight, dates, and tote ID.</div>
+          <img id="inventoryPhotoPreview" class="inventory-photo-preview" alt="Tote label preview">
+        </label>
+
+        <label class="span-4">Notes
+          <textarea id="inventoryNotes" rows="3" placeholder="Example: Installed B-side tote on Truck 102, label slightly damaged, removed old tote with 25% left..."></textarea>
+        </label>
+      </div>
+
+      <div class="inventory-helper-card" style="margin-top:14px;">
+        Field crew records the event and uploads the label photo. Managers review the event history and inventory ledger. Inventory totals stay manager-controlled.
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" type="button" id="btnSaveInventoryEvent">Save Tote Event</button>
+        <button class="btn btn-outline" type="button" id="btnClearInventoryForm">Clear Form</button>
+      </div>
+    </div>
+
+    <div class="card" id="inventoryManagerLogCard" style="display:none;">
+      <h2>Recent Tote / Inventory Events</h2>
+      <p class="dashboard-note">Manager view only. Crews can submit events but do not see the full event ledger.</p>
+      <div id="inventoryEventList" class="chemical-event-log">
+        <div class="empty-state">No inventory events yet.</div>
+      </div>
+    </div>
+  </div>
+
+
 </div>
 
 
@@ -2014,8 +2170,10 @@
   let latestDashboardReports = [];
   let chemicalInventoryUnsubscribe = null;
   let chemicalEventsUnsubscribe = null;
+  let inventoryEventsUnsubscribe = null;
   let latestChemicalInventory = {};
   let latestChemicalEvents = [];
+  let latestInventoryEvents = [];
 
   // --- AUTH LOGIC ---
   const authOverlay = document.getElementById('auth-overlay');
@@ -2077,6 +2235,10 @@
       chemicalEventsUnsubscribe();
       chemicalEventsUnsubscribe = null;
     }
+    if (inventoryEventsUnsubscribe) {
+      inventoryEventsUnsubscribe();
+      inventoryEventsUnsubscribe = null;
+    }
 
     if (user) {
       const email = String(user.email || '').toLowerCase();
@@ -2093,13 +2255,18 @@
 
       const dashboardTab = document.getElementById('tabDashboard');
       const chemicalTab = document.getElementById('tabChemical');
+      const inventoryTab = document.getElementById('tabInventory');
       if (dashboardTab) dashboardTab.style.display = isCurrentUserManager ? 'block' : 'none';
       if (chemicalTab) chemicalTab.style.display = isCurrentUserManager ? 'block' : 'none';
+      if (inventoryTab) inventoryTab.style.display = 'block';
+      const inventoryManagerLogCard = document.getElementById('inventoryManagerLogCard');
+      if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = isCurrentUserManager ? 'block' : 'none';
 
       loadHistory();
       if (isCurrentUserManager) {
         loadDashboard();
         loadChemicalTracker();
+        loadInventoryEvents();
       }
       restoreLocalDraft();
     } else {
@@ -2108,8 +2275,12 @@
       mainContent.style.display = 'none';
       const dashboardTab = document.getElementById('tabDashboard');
       const chemicalTab = document.getElementById('tabChemical');
+      const inventoryTab = document.getElementById('tabInventory');
+      const inventoryManagerLogCard = document.getElementById('inventoryManagerLogCard');
       if (dashboardTab) dashboardTab.style.display = 'none';
       if (chemicalTab) chemicalTab.style.display = 'none';
+      if (inventoryTab) inventoryTab.style.display = 'none';
+      if (inventoryManagerLogCard) inventoryManagerLogCard.style.display = 'none';
       switchTab('new-form');
     }
   });
@@ -2185,6 +2356,7 @@ document.addEventListener("change", (e) => {
       tabId === 'history' ? 'tabHistory' :
       tabId === 'dashboard' ? 'tabDashboard' :
       tabId === 'chemical' ? 'tabChemical' :
+      tabId === 'inventory' ? 'tabInventory' :
       'tabNew';
     const btn = document.getElementById(btnId);
     if (btn) btn.classList.add('active');
@@ -2207,6 +2379,9 @@ document.addEventListener("change", (e) => {
       return;
     }
     switchTab('chemical');
+  });
+  document.getElementById('tabInventory')?.addEventListener('click', () => {
+    switchTab('inventory');
   });
 
   function showMessage(text, type = 'success') {
@@ -3382,6 +3557,245 @@ data.googlePlaceId = data.googlePlaceId || "";
       if (box) box.innerHTML = '<div class="empty-state">Chemical event log could not load. Check Firebase rules.</div>';
     });
   }
+
+
+
+  function showInventoryMessage(text, type = 'success') {
+    const box = document.getElementById('inventoryStatusMessage');
+    if (!box) return;
+    box.textContent = text;
+    box.style.display = 'block';
+    box.style.backgroundColor = type === 'success' ? '#f0fdf4' : '#fef2f2';
+    box.style.color = type === 'success' ? '#166534' : '#b91c1c';
+    box.style.border = `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}`;
+  }
+
+  function getSuggestedInventoryWeight(truck, side, packageType) {
+    const pkg = packageType === 'barrel' || String(truck) === '119'
+      ? CHEMICAL_CAPACITY.barrel
+      : CHEMICAL_CAPACITY.tote;
+    return Number(pkg[side] || 0);
+  }
+
+  function syncInventoryDefaults() {
+    const truck = document.getElementById('inventoryTruck')?.value || '102';
+    const side = document.getElementById('inventorySide')?.value || 'A';
+    const packageInput = document.getElementById('inventoryPackageType');
+    const weightInput = document.getElementById('inventoryNetWeight');
+    if (packageInput && String(truck) === '119') packageInput.value = 'barrel';
+    if (packageInput && String(truck) !== '119' && !packageInput.dataset.userChanged) packageInput.value = 'tote';
+    const packageType = packageInput?.value || 'tote';
+    if (weightInput && !weightInput.dataset.userChanged) {
+      const suggested = getSuggestedInventoryWeight(truck, side, packageType);
+      if (suggested) weightInput.value = suggested;
+    }
+  }
+
+  function clearInventoryForm() {
+    ['inventoryLotNumber', 'inventoryToteId', 'inventoryMfgDate', 'inventoryExpDate', 'inventoryNotes'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const leftover = document.getElementById('inventoryLeftoverPercent');
+    if (leftover) leftover.value = '';
+    const photo = document.getElementById('inventoryPhoto');
+    if (photo) photo.value = '';
+    const preview = document.getElementById('inventoryPhotoPreview');
+    if (preview) {
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+    const weightInput = document.getElementById('inventoryNetWeight');
+    if (weightInput) delete weightInput.dataset.userChanged;
+    syncInventoryDefaults();
+  }
+
+  async function uploadInventoryPhoto(file, truck, side, eventType) {
+    if (!file) return null;
+    const cleanName = safeFileName(file.name || 'tote_label.jpg');
+    const path = `inventory-photos/${appId}/${auth.currentUser.uid}/${truck}_${side}_${eventType}_${Date.now()}_${cleanName}`;
+    const fileRef = storageRef(storage, path);
+    const snapshot = await uploadBytes(fileRef, file, {
+      contentType: file.type || 'image/jpeg',
+      customMetadata: {
+        uploadedBy: auth.currentUser.email || '',
+        appId,
+        truck: String(truck),
+        side: String(side),
+        eventType: String(eventType)
+      }
+    });
+    const url = await getDownloadURL(snapshot.ref);
+    return {
+      name: file.name || cleanName,
+      type: file.type || '',
+      size: file.size || 0,
+      path,
+      url,
+      uploadedAt: new Date().toISOString()
+    };
+  }
+
+  async function saveInventoryEvent() {
+    if (!auth.currentUser) {
+      showInventoryMessage('You must be signed in to save inventory events.', 'error');
+      return;
+    }
+
+    const truck = document.getElementById('inventoryTruck')?.value || '';
+    const side = document.getElementById('inventorySide')?.value || '';
+    const eventType = document.getElementById('inventoryEventType')?.value || '';
+    const packageType = document.getElementById('inventoryPackageType')?.value || '';
+    const lotNumber = document.getElementById('inventoryLotNumber')?.value.trim() || '';
+    const netWeight = Number(document.getElementById('inventoryNetWeight')?.value || 0);
+    const toteId = document.getElementById('inventoryToteId')?.value.trim() || '';
+    const leftoverPercentRaw = document.getElementById('inventoryLeftoverPercent')?.value || '';
+    const manufactureDate = document.getElementById('inventoryMfgDate')?.value || '';
+    const expirationDate = document.getElementById('inventoryExpDate')?.value || '';
+    const notes = document.getElementById('inventoryNotes')?.value.trim() || '';
+    const photoFile = document.getElementById('inventoryPhoto')?.files?.[0] || null;
+
+    if (!truck || !side || !eventType || !packageType) {
+      showInventoryMessage('Truck, side, event type, and package type are required.', 'error');
+      return;
+    }
+
+    if (!photoFile) {
+      showInventoryMessage('Please take or upload a tote label photo before saving.', 'error');
+      return;
+    }
+
+    const saveBtn = document.getElementById('btnSaveInventoryEvent');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving Tote Event...';
+    }
+
+    try {
+      const photo = await uploadInventoryPhoto(photoFile, truck, side, eventType);
+      const nowIso = new Date().toISOString();
+      const leftoverPercent = leftoverPercentRaw === '' ? null : Number(leftoverPercentRaw);
+      const calculatedLeftoverLbs = Number.isFinite(leftoverPercent) && netWeight > 0
+        ? (netWeight * leftoverPercent) / 100
+        : null;
+
+      const payload = {
+        truck: String(truck),
+        side,
+        eventType,
+        eventLabel: eventType === 'install_tote' ? 'Install New Tote' : 'Remove Tote',
+        packageType,
+        lotNumber,
+        netWeight: Number.isFinite(netWeight) ? netWeight : 0,
+        toteId,
+        leftoverPercent,
+        calculatedLeftoverLbs,
+        manufactureDate,
+        expirationDate,
+        notes,
+        photo,
+        photoUrl: photo?.url || '',
+        createdBy: auth.currentUser.email || 'unknown',
+        createdAt: serverTimestamp(),
+        createdAtIso: nowIso,
+        status: 'Needs Review'
+      };
+
+      const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'truckInventoryEvents');
+      await addDoc(eventsRef, payload);
+
+      if (eventType === 'install_tote') {
+        const currentRef = firestoreDoc(db, 'artifacts', appId, 'public', 'data', 'toteInstalls', `${truck}_${side}`);
+        await setDoc(currentRef, {
+          ...payload,
+          installedAt: serverTimestamp(),
+          installedAtIso: nowIso,
+          current: true
+        }, { merge: true });
+      }
+
+      showInventoryMessage('Tote event saved. Managers can review it in the event log.', 'success');
+      clearInventoryForm();
+    } catch (err) {
+      console.error(err);
+      showInventoryMessage('Inventory event failed. Check Firebase rules for truckInventoryEvents, toteInstalls, and Storage.', 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Tote Event';
+      }
+    }
+  }
+
+  function renderInventoryEvents() {
+    const box = document.getElementById('inventoryEventList');
+    if (!box) return;
+
+    const sorted = [...latestInventoryEvents].sort((a, b) => {
+      const atA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAtIso || 0).getTime();
+      const atB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAtIso || 0).getTime();
+      return atB - atA;
+    });
+
+    box.innerHTML = sorted.length ? sorted.slice(0, 50).map(event => {
+      const at = event.createdAt?.toDate ? event.createdAt.toDate().toLocaleString() : (event.createdAtIso ? new Date(event.createdAtIso).toLocaleString() : 'No date');
+      const leftover = event.leftoverPercent !== null && event.leftoverPercent !== undefined
+        ? ` | Leftover: ${fmtNumber(event.leftoverPercent, 0)}%`
+        : '';
+      const photoLink = event.photoUrl
+        ? ` | <a href="${escapeHtml(event.photoUrl)}" target="_blank" rel="noopener">Photo</a>`
+        : '';
+      return `<div class="chemical-event-item">
+        <div class="inventory-event-header">
+          <strong>${escapeHtml(at)}</strong>
+          <span class="status-pill status-review">${escapeHtml(event.status || 'Needs Review')}</span>
+        </div>
+        Truck ${escapeHtml(event.truck || '—')} ${escapeHtml(event.side || '')}-Side — ${escapeHtml(event.eventLabel || event.eventType || 'Inventory Event')}
+        <br>Lot: ${escapeHtml(event.lotNumber || 'N/A')} | ${escapeHtml(event.packageType || '')} | Net: ${fmtNumber(event.netWeight || 0, 0)} lbs${leftover}${photoLink}
+        <div class="inventory-event-meta">By ${escapeHtml(event.createdBy || 'unknown')}${event.notes ? ` — ${escapeHtml(event.notes)}` : ''}</div>
+      </div>`;
+    }).join('') : '<div class="empty-state">No inventory events yet.</div>';
+  }
+
+  function loadInventoryEvents() {
+    if (!auth.currentUser || !isCurrentUserManager) return;
+    const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'truckInventoryEvents');
+
+    inventoryEventsUnsubscribe = onSnapshot(eventsRef, (snapshot) => {
+      latestInventoryEvents = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderInventoryEvents();
+    }, (err) => {
+      console.error(err);
+      const box = document.getElementById('inventoryEventList');
+      if (box) box.innerHTML = '<div class="empty-state">Inventory event log could not load. Check Firebase rules.</div>';
+    });
+  }
+
+  document.getElementById('btnSaveInventoryEvent')?.addEventListener('click', saveInventoryEvent);
+  document.getElementById('btnClearInventoryForm')?.addEventListener('click', clearInventoryForm);
+  ['inventoryTruck', 'inventorySide', 'inventoryPackageType'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+      if (id === 'inventoryPackageType') document.getElementById(id).dataset.userChanged = 'true';
+      syncInventoryDefaults();
+    });
+  });
+  document.getElementById('inventoryNetWeight')?.addEventListener('input', (event) => {
+    event.target.dataset.userChanged = 'true';
+  });
+  document.getElementById('inventoryPhoto')?.addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    const preview = document.getElementById('inventoryPhotoPreview');
+    if (!preview) return;
+    if (!file) {
+      preview.src = '';
+      preview.style.display = 'none';
+      return;
+    }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  });
+  syncInventoryDefaults();
+
 
   function renderDashboardFromReports(allActiveDocs) {
     const docs = filterReportsByDashboardRange(allActiveDocs, dashboardRange);
